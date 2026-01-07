@@ -1,73 +1,83 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Message as VercelChatMessage, StreamingTextResponse } from "ai";
 
-import { ChatOpenAI } from "@langchain/openai";
-import { PromptTemplate } from "@langchain/core/prompts";
-import { HttpResponseOutputParser } from "langchain/output_parsers";
-
 export const runtime = "edge";
 
-const formatMessage = (message: VercelChatMessage) => {
-  return `${message.role}: ${message.content}`;
-};
-
-const TEMPLATE = `You are a pirate named Patchy. All responses must be extremely verbose and in pirate dialect.
-
-Current conversation:
-{chat_history}
-
-User: {input}
-AI:`;
-
-/**
- * This handler initializes and calls a simple chain with a prompt,
- * chat model, and output parser. See the docs for more information:
- *
- * https://js.langchain.com/docs/guides/expression_language/cookbook#prompttemplate--llm--outputparser
- */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const messages = body.messages ?? [];
-    const formattedPreviousMessages = messages.slice(0, -1).map(formatMessage);
-    const currentMessageContent = messages[messages.length - 1].content;
-    const prompt = PromptTemplate.fromTemplate(TEMPLATE);
-
-    /**
-     * You can also try e.g.:
-     *
-     * import { ChatAnthropic } from "@langchain/anthropic";
-     * const model = new ChatAnthropic({});
-     *
-     * See a full list of supported models at:
-     * https://js.langchain.com/docs/modules/model_io/models/
-     */
-    const model = new ChatOpenAI({
-      temperature: 0.8,
-      model: "gpt-4o-mini",
+    const requestedModel = body.model as string | undefined;
+    const modelMap: Record<string, string> = {
+      "llama-3.3-70b-versatile": "llama3-70b-8192",
+      "llama-3.1-8b-instant": "llama3-8b-8192",
+      "llama3-70b-8192": "llama3-70b-8192",
+      "llama3-8b-8192": "llama3-8b-8192",
+    };
+    const effectiveModel = requestedModel && modelMap[requestedModel] ? modelMap[requestedModel] : "llama3-70b-8192";
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "Missing GROQ_API_KEY" }, { status: 500 });
+    }
+    const openAIMessages = messages.map((m: VercelChatMessage) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: effectiveModel,
+        messages: openAIMessages,
+        temperature: 0.2,
+        stream: true,
+      }),
     });
-
-    /**
-     * Chat models stream message chunks rather than bytes, so this
-     * output parser handles serialization and byte-encoding.
-     */
-    const outputParser = new HttpResponseOutputParser();
-
-    /**
-     * Can also initialize as:
-     *
-     * import { RunnableSequence } from "@langchain/core/runnables";
-     * const chain = RunnableSequence.from([prompt, model, outputParser]);
-     */
-    const chain = prompt.pipe(model).pipe(outputParser);
-
-    const stream = await chain.stream({
-      chat_history: formattedPreviousMessages.join("\n"),
-      input: currentMessageContent,
+    if (!res.ok || !res.body) {
+      const text = await res.text();
+      return NextResponse.json({ error: text || "Groq API error" }, { status: res.status || 500 });
+    }
+    const textEncoder = new TextEncoder();
+    const textDecoder = new TextDecoder();
+    let buffer = "";
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = res.body!.getReader();
+        async function read() {
+          const { value, done } = await reader.read();
+          if (done) {
+            controller.close();
+            return;
+          }
+          buffer += textDecoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data:")) continue;
+            const data = trimmed.slice(5).trim();
+            if (!data || data === "[DONE]") continue;
+            try {
+              const json = JSON.parse(data);
+              const content =
+                json?.choices?.[0]?.delta?.content ??
+                json?.choices?.[0]?.message?.content ??
+                "";
+              if (content) {
+                controller.enqueue(textEncoder.encode(content));
+              }
+            } catch {}
+          }
+          await read();
+        }
+        await read();
+      },
     });
-
     return new StreamingTextResponse(stream);
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: e.status ?? 500 });
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
