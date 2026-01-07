@@ -7,31 +7,21 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code')
 
   if (code) {
-    const cookieStore = await cookies()
-
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
+          getAll: async () => {
+            const store = await cookies()
+            const all = store.getAll()
+            return all.map(({ name, value }) => ({ name, value }))
           },
-          set(
-            name: string,
-            value: string,
-            options: {
-              path: string
-              maxAge?: number
-              domain?: string
-              sameSite?: 'lax' | 'strict' | 'none'
-              secure?: boolean
-            },
-          ) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: { path: string; domain?: string }) {
-            cookieStore.set({ name, value: '', ...options, maxAge: 0 })
+          setAll: async (list) => {
+            const store = await cookies()
+            for (const { name, value, options } of list) {
+              store.set({ name, value, ...options })
+            }
           },
         },
       },

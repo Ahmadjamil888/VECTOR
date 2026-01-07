@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { BoxIcon, DownloadIcon } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -10,8 +11,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="px-6 h-16 flex items-center border-b sticky top-0 z-50 bg-background/80 backdrop-blur">
         <div className="flex items-center gap-2 font-bold text-xl">
-          <img src="/images/logo.png" alt="Vector" className="h-8 w-8 rounded-lg dark:hidden" />
-          <img src="/images/logo-dark-mode.png" alt="Vector" className="h-8 w-8 rounded-lg hidden dark:block" />
+          <Image src="/images/logo.png" alt="Vector" width={32} height={32} className="h-8 w-8 rounded-lg dark:hidden" />
+          <Image src="/images/logo-dark-mode.png" alt="Vector" width={32} height={32} className="h-8 w-8 rounded-lg hidden dark:block" />
           <span>Vector</span>
         </div>
         <nav className="ml-8 hidden md:flex gap-6 text-sm">
@@ -433,8 +434,8 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="flex items-center gap-2 font-semibold">
-              <img src="/images/logo.png" alt="Vector" className="h-8 w-8 rounded-lg dark:hidden" />
-              <img src="/images/logo-dark-mode.png" alt="Vector" className="h-8 w-8 rounded-lg hidden dark:block" />
+              <Image src="/images/logo.png" alt="Vector" width={32} height={32} className="h-8 w-8 rounded-lg dark:hidden" />
+              <Image src="/images/logo-dark-mode.png" alt="Vector" width={32} height={32} className="h-8 w-8 rounded-lg hidden dark:block" />
               <span>Vector</span>
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">

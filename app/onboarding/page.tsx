@@ -62,7 +62,7 @@ export default function OnboardingPage() {
         <Card className="glow-box bg-card/50 backdrop-blur-xl">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold glow-text">Welcome to Vector</CardTitle>
-            <CardDescription>Let's set up your profile to personalize your experience.</CardDescription>
+            <CardDescription>Let&apos;s set up your profile to personalize your experience.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

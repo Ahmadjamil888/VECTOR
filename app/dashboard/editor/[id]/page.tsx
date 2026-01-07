@@ -77,7 +77,7 @@ export default function EditorPage() {
             Papa.parse(text, {
               header: true,
               skipEmptyLines: true,
-              complete: (results) => {
+              complete: (results: any) => {
                 setData(results.data);
                 setStagedData(results.data);
                 setLoading(false);
