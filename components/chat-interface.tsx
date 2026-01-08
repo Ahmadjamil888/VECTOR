@@ -1,5 +1,3 @@
-"use client";
-
 import { useChat } from "ai/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +5,62 @@ import { SendIcon, BotIcon, WrenchIcon } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { toast } from "sonner";
 import { useCallback, useEffect, useState } from "react";
+import { EnhancedChatSidebar } from "@/components/EnhancedChatSidebar";
 
+// Separate component for dataset-specific chat interface
+function DatasetChatInterface({ data, onProposeEdits, initialPrompt, datasetId }: { data: any[]; onProposeEdits: (next: any[]) => void; initialPrompt?: string; datasetId: string }) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold flex items-center gap-2 glow-text">
+            <WrenchIcon className="h-4 w-4 text-primary" />
+            Vector AI - Qwen Coder
+          </h3>
+          <p className="text-xs text-muted-foreground">Ask me to edit your dataset.</p>
+        </div>
+      </div>
+      <div className="flex-1 overflow-auto p-4">
+        <EnhancedChatSidebar 
+          datasetId={datasetId} 
+          initialPrompt={initialPrompt}
+          onApplyChanges={(prompt) => {
+            // Apply the transformation permanently by making API call to finalize
+            try {
+              fetch('/api/transform/finalize', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  datasetId,
+                  transformationPrompt: prompt,
+                }),
+              }).then(response => {
+                if (response.ok) {
+                  toast.success('Changes applied successfully!');
+                } else {
+                  response.json().then(errorData => {
+                    toast.error(errorData.error || 'Failed to apply changes');
+                  });
+                }
+              });
+            } catch (err) {
+              console.error('Error applying transformation:', err);
+              toast.error('Error applying transformation');
+            }
+          }}
+          onCancel={() => {
+            toast.info('Transformation cancelled');
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
-
-export function ChatInterface({ data, onProposeEdits, initialPrompt, datasetId }: { data: any[]; onProposeEdits: (next: any[]) => void; initialPrompt?: string; datasetId?: string }) {
+// Original chat interface component
+function GeneralChatInterface({ data, onProposeEdits, initialPrompt }: { data: any[]; onProposeEdits: (next: any[]) => void; initialPrompt?: string; datasetId?: string }) {
   const { messages, input, handleInputChange, handleSubmit, isLoading, setInput } = useChat({
     api: "/api/chat",
     body: { model: "qwen-coder" }, // Using Qwen Coder as the only model
@@ -36,7 +86,7 @@ export function ChatInterface({ data, onProposeEdits, initialPrompt, datasetId }
           },
           body: JSON.stringify({
             prompt: text,
-            datasetId: datasetId || ''
+            datasetId: ''
           }),
         });
         
@@ -197,4 +247,14 @@ export function ChatInterface({ data, onProposeEdits, initialPrompt, datasetId }
       </div>
     </div>
   );
+}
+
+export function ChatInterface({ data, onProposeEdits, initialPrompt, datasetId }: { data: any[]; onProposeEdits: (next: any[]) => void; initialPrompt?: string; datasetId?: string }) {
+  // Use the enhanced chat sidebar instead of the old chat interface if datasetId is provided
+  if (datasetId) {
+    return <DatasetChatInterface data={data} onProposeEdits={onProposeEdits} initialPrompt={initialPrompt} datasetId={datasetId} />;
+  }
+  
+  // Fallback to old interface if no datasetId is provided
+  return <GeneralChatInterface data={data} onProposeEdits={onProposeEdits} initialPrompt={initialPrompt} />;
 }

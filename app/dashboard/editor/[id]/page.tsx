@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChatInterface } from "@/components/chat-interface";
+import { EnhancedChatSidebar } from "@/components/EnhancedChatSidebar";
 import { DataGrid } from "@/components/data-grid";
 import { TransformationInterface } from "@/components/TransformationInterface";
 import { Button } from "@/components/ui/button";
@@ -238,7 +239,83 @@ export default function EditorPage() {
                 <Button variant="outline" size="sm" onClick={() => setShowSidebar(false)}>Close</Button>
               </div>
               <div className="flex-1 min-h-0 overflow-auto p-2">
-                <ChatInterface data={stagedData} onProposeEdits={onChatProposeEdits} initialPrompt={buildInitialPrompt()} datasetId={id} />
+                <EnhancedChatSidebar 
+                  datasetId={id}
+                  initialPrompt={buildInitialPrompt()}
+                  onApplyChanges={(prompt) => {
+                    // Apply the transformation permanently by making API call to finalize
+                    try {
+                      fetch('/api/transform/finalize', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          datasetId: id,
+                          transformationPrompt: prompt,
+                        }),
+                      }).then(response => {
+                        if (response.ok) {
+                          toast.success('Changes applied successfully!');
+                          // Refresh the data
+                          const loadDataset = async () => {
+                            try {
+                              if (filePath) {
+                                const { data: fileData, error: storageError } = await supabase
+                                  .storage
+                                  .from('datasets')
+                                  .download(filePath);
+
+                                if (storageError) throw storageError;
+
+                                const text = await fileData.text();
+                                const ext = (filePath?.split('.').pop() || datasetName?.split('.').pop() || "").toLowerCase();
+                                if (ext === 'csv') {
+                                  Papa.parse(text, {
+                                    header: true,
+                                    skipEmptyLines: true,
+                                    complete: (results: any) => {
+                                      setData(results.data);
+                                      setStagedData(results.data);
+                                    },
+                                    error: (error: any) => {
+                                      toast.error(`Parse error: ${error.message}`);
+                                    }
+                                  });
+                                } else if (ext === 'json') {
+                                  let parsed: any = [];
+                                  try {
+                                    const json = JSON.parse(text);
+                                    parsed = jsonToRows(json);
+                                  } catch (e: any) {
+                                    toast.error("Invalid JSON file");
+                                  }
+                                  const rows = Array.isArray(parsed) ? parsed : [];
+                                  setData(rows);
+                                  setStagedData(rows);
+                                }
+                              }
+                            } catch (error: any) {
+                              console.error('Error reloading dataset:', error);
+                              toast.error("Failed to reload dataset");
+                            }
+                          };
+                          loadDataset();
+                        } else {
+                          response.json().then(errorData => {
+                            toast.error(errorData.error || 'Failed to apply changes');
+                          });
+                        }
+                      });
+                    } catch (err) {
+                      console.error('Error applying transformation:', err);
+                      toast.error('Error applying transformation');
+                    }
+                  }}
+                  onCancel={() => {
+                    toast.info('Transformation cancelled');
+                  }}
+                />
               </div>
             </div>
           </div>
