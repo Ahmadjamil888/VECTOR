@@ -36,14 +36,30 @@ export default function DashboardLayout({
   const supabase = createClient()
   const router = useRouter()
   const [authed, setAuthed] = useState<boolean | null>(null)
-  // Redirect to /login if user is not authenticated
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+  
+  // Redirect to /login if user is not authenticated and fetch user data
   useEffect(() => {
     let mounted = true
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!mounted) return
       setAuthed(!!user)
-      if (!user) {
+      setUser(user)
+      
+      if (user) {
+        // Fetch user profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile) {
+          setProfile(profile)
+        }
+      } else {
         router.push("/login")
       }
     }
@@ -103,8 +119,8 @@ export default function DashboardLayout({
                <DropdownMenuTrigger asChild>
                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                    <Avatar className="h-8 w-8">
-                     <AvatarImage src="/avatars/01.png" alt="@vector" />
-                     <AvatarFallback>V</AvatarFallback>
+                     <AvatarImage src={profile?.avatar_url || user?.user_metadata?.picture || user?.user_metadata?.avatar_url} />
+                     <AvatarFallback>{user?.email?.[0]?.toUpperCase() || 'V'}</AvatarFallback>
                    </Avatar>
                  </Button>
                </DropdownMenuTrigger>

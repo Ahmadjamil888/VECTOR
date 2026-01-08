@@ -7,25 +7,13 @@ import { SendIcon, BotIcon, WrenchIcon } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { toast } from "sonner";
 import { useCallback, useEffect, useState } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
-const MODEL_OPTIONS = [
-  { id: "llama3-70b-8192", label: "Llama 3 70B" },
-  { id: "llama3-8b-8192", label: "Llama 3 8B" },
-  { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
-  { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B" },
-];
+
 
 export function ChatInterface({ data, onProposeEdits, initialPrompt, datasetId }: { data: any[]; onProposeEdits: (next: any[]) => void; initialPrompt?: string; datasetId?: string }) {
-  const [model, setModel] = useState<string>(MODEL_OPTIONS[0].id);
   const { messages, input, handleInputChange, handleSubmit, isLoading, setInput } = useChat({
     api: "/api/chat",
-    body: { model },
+    body: { model: "qwen-coder" }, // Using Qwen Coder as the only model
   });
   const [ackMessage, setAckMessage] = useState<string | null>(null);
   const applyCommand = useCallback(async (text: string) => {
@@ -37,18 +25,18 @@ export function ChatInterface({ data, onProposeEdits, initialPrompt, datasetId }
         lower.includes('normalize') || lower.includes('standardize') || lower.includes('scale') ||
         lower.includes('remove outliers') || lower.includes('fill missing') || lower.includes('handle missing')) {
       
-      // Call the transformation API
+      // Call the Qwen Coder API
       try {
         toast.info("Processing transformation request with Qwen Coder...");
         
-        const response = await fetch('/api/transform', {
+        const response = await fetch('/api/qwen-coder', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            datasetId: datasetId || '',
-            transformationPrompt: text
+            prompt: text,
+            datasetId: datasetId || ''
           }),
         });
         
@@ -62,7 +50,6 @@ export function ChatInterface({ data, onProposeEdits, initialPrompt, datasetId }
         if (result.success) {
           toast.success("Transformation completed successfully!");
           // The transformation API will return preview data that can be used to update the UI
-          // For now, we'll just show a success message
           console.log('Transformation result:', result.result);
         } else {
           throw new Error(result.error || "Transformation failed");
@@ -136,8 +123,17 @@ export function ChatInterface({ data, onProposeEdits, initialPrompt, datasetId }
   const onSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      await applyCommand(input);
-      await handleSubmit(e);
+      // Check if this is a transformation command
+      const lower = input.toLowerCase();
+      if (lower.includes('transform') || lower.includes('regression') || lower.includes('clean') || 
+          lower.includes('preprocess') || lower.includes('prepare') || lower.includes('encode') ||
+          lower.includes('normalize') || lower.includes('standardize') || lower.includes('scale') ||
+          lower.includes('remove outliers') || lower.includes('fill missing') || lower.includes('handle missing')) {
+        await applyCommand(input);
+      } else {
+        // For regular chat messages, send to the chat API
+        await handleSubmit(e);
+      }
     },
     [input, handleSubmit, applyCommand]
   );
@@ -152,25 +148,11 @@ export function ChatInterface({ data, onProposeEdits, initialPrompt, datasetId }
       <div className="p-4 border-b flex items-center justify-between">
         <div>
           <h3 className="font-semibold flex items-center gap-2 glow-text">
-            <BotIcon className="h-4 w-4 text-primary" />
-            Vector AI
+            <WrenchIcon className="h-4 w-4 text-primary" />
+            Vector AI - Qwen Coder
           </h3>
           <p className="text-xs text-muted-foreground">Ask me to edit your dataset.</p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="text-xs">
-              {MODEL_OPTIONS.find((m) => m.id === model)?.label ?? "Model"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {MODEL_OPTIONS.map((opt) => (
-              <DropdownMenuItem key={opt.id} onClick={() => setModel(opt.id)}>
-                {opt.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
       
       <div className="flex-1 overflow-auto p-4 space-y-4">

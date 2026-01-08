@@ -71,7 +71,7 @@ export default function ProfilePage() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-6">
             <Avatar className="h-20 w-20 border-2 border-primary shadow-[0_0_15px_rgba(168,85,247,0.5)]">
-              <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} />
+              <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture} />
               <AvatarFallback className="text-lg bg-primary/20 text-primary">
                 {fullName?.[0] || email?.[0] || 'V'}
               </AvatarFallback>
