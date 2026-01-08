@@ -3,7 +3,7 @@
 import { useChat } from "ai/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SendIcon, BotIcon } from "lucide-react";
+import { SendIcon, BotIcon, WrenchIcon } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { toast } from "sonner";
 import { useCallback, useEffect, useState } from "react";
@@ -21,15 +21,61 @@ const MODEL_OPTIONS = [
   { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B" },
 ];
 
-export function ChatInterface({ data, onProposeEdits, initialPrompt }: { data: any[]; onProposeEdits: (next: any[]) => void; initialPrompt?: string }) {
+export function ChatInterface({ data, onProposeEdits, initialPrompt, datasetId }: { data: any[]; onProposeEdits: (next: any[]) => void; initialPrompt?: string; datasetId?: string }) {
   const [model, setModel] = useState<string>(MODEL_OPTIONS[0].id);
   const { messages, input, handleInputChange, handleSubmit, isLoading, setInput } = useChat({
     api: "/api/chat",
     body: { model },
   });
   const [ackMessage, setAckMessage] = useState<string | null>(null);
-  const applyCommand = useCallback((text: string) => {
+  const applyCommand = useCallback(async (text: string) => {
     const lower = text.toLowerCase();
+    
+    // Check if this is a transformation request that should be handled by the API
+    if (lower.includes('transform') || lower.includes('regression') || lower.includes('clean') || 
+        lower.includes('preprocess') || lower.includes('prepare') || lower.includes('encode') ||
+        lower.includes('normalize') || lower.includes('standardize') || lower.includes('scale') ||
+        lower.includes('remove outliers') || lower.includes('fill missing') || lower.includes('handle missing')) {
+      
+      // Call the transformation API
+      try {
+        toast.info("Processing transformation request with Qwen Coder...");
+        
+        const response = await fetch('/api/transform', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            datasetId: datasetId || '',
+            transformationPrompt: text
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `API error: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          toast.success("Transformation completed successfully!");
+          // The transformation API will return preview data that can be used to update the UI
+          // For now, we'll just show a success message
+          console.log('Transformation result:', result.result);
+        } else {
+          throw new Error(result.error || "Transformation failed");
+        }
+      } catch (error: any) {
+        console.error('Transformation error:', error);
+        toast.error(`Transformation failed: ${error.message}`);
+      }
+      
+      return;
+    }
+    
+    // Handle simple commands locally
     let next = [...data];
     if (lower.includes("remove duplicates")) {
       const seen = new Set<string>();
@@ -90,7 +136,7 @@ export function ChatInterface({ data, onProposeEdits, initialPrompt }: { data: a
   const onSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      applyCommand(input);
+      await applyCommand(input);
       await handleSubmit(e);
     },
     [input, handleSubmit, applyCommand]
