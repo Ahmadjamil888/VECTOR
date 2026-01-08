@@ -90,7 +90,7 @@ export default function OnboardingPage() {
               </div>
               <Button 
                 type="submit" 
-                className="w-full bg-primary hover:bg-primary/90 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]"
+                className="w-full bg-primary hover:bg-primary/90 text-white dark:text-black shadow-[0_0_15px_rgba(168,85,247,0.5)]"
                 disabled={loading}
               >
                 {loading ? 'Setting up...' : 'Get Started'}

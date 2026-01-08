@@ -13,7 +13,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/utils/cn"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -35,6 +35,22 @@ export default function DashboardLayout({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const supabase = createClient()
   const router = useRouter()
+  const [authed, setAuthed] = useState<boolean | null>(null)
+  // Redirect to /login if user is not authenticated
+  useEffect(() => {
+    let mounted = true
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!mounted) return
+      setAuthed(!!user)
+      if (!user) {
+        router.push("/login")
+      }
+    }
+    checkAuth()
+    return () => { mounted = false }
+  }, [])
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push("/")

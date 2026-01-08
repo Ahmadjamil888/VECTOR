@@ -93,7 +93,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <UploadDialog>
-             <Button className="gap-2 bg-primary hover:bg-primary/80 text-white shadow-[0_0_15px_rgba(128,149,216,0.5)]">
+             <Button className="gap-2 bg-primary hover:bg-primary/80 text-white dark:text-black shadow-[0_0_15px_rgba(128,149,216,0.5)]">
                <PlusIcon className="h-4 w-4" /> Create New Project
              </Button>
           </UploadDialog>
