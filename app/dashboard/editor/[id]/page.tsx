@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChatInterface } from "@/components/chat-interface";
 import { DataGrid } from "@/components/data-grid";
+import { TransformationInterface } from "@/components/TransformationInterface";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon, SaveIcon, Loader2Icon, PanelRightCloseIcon, PanelRightOpenIcon } from "lucide-react";
 import Papa from "papaparse";
@@ -18,6 +19,7 @@ export default function EditorPage() {
   const [loading, setLoading] = useState(true);
   const [showChat, setShowChat] = useState(true);
   const [showPublish, setShowPublish] = useState(false);
+  const [showTransform, setShowTransform] = useState(false);
   const [target, setTarget] = useState<"hf" | "kaggle">("hf");
   const [pubTitle, setPubTitle] = useState("");
   const [pubDesc, setPubDesc] = useState("");
@@ -216,10 +218,16 @@ export default function EditorPage() {
           <Button variant="outline" className="gap-2" onClick={() => setShowChat((s) => !s)}>
             {showChat ? <PanelRightCloseIcon className="h-4 w-4" /> : <PanelRightOpenIcon className="h-4 w-4" />} Chat
           </Button>
+          <Button variant="outline" className="gap-2" onClick={() => {
+            setShowChat(false);
+            setShowTransform((s) => !s);
+          }}>
+            {showTransform ? <PanelRightCloseIcon className="h-4 w-4" /> : <PanelRightOpenIcon className="h-4 w-4" />} Transform
+          </Button>
           <Button variant="outline" className="gap-2" onClick={handleSave}>
             <SaveIcon className="h-4 w-4" /> Save
           </Button>
-          <Button variant="default" className="gap-2 bg-primary text-white shadow-[0_0_15px_rgba(128,149,216,0.5)]" onClick={handleExport}>
+          <Button variant="default" className="gap-2 bg-primary shadow-[0_0_15px_rgba(128,149,216,0.5)]" onClick={handleExport}>
             <DownloadIcon className="h-4 w-4" /> Export Dataset
           </Button>
         </div>
@@ -238,6 +246,19 @@ export default function EditorPage() {
               </div>
               <div className="flex-1 min-h-0">
                 <ChatInterface data={stagedData} onProposeEdits={onChatProposeEdits} initialPrompt={buildInitialPrompt()} />
+              </div>
+            </div>
+          </div>
+        )}
+        {showTransform && (
+          <div className="w-[420px] border-l h-full max-h-[100vh]">
+            <div className="h-full flex flex-col">
+              <div className="flex items-center justify-between p-2 border-b">
+                <div className="text-sm font-medium">AI Data Transformation</div>
+                <Button variant="outline" size="sm" onClick={() => setShowTransform(false)}>Close</Button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-auto p-2">
+                <TransformationInterface datasetId={id} />
               </div>
             </div>
           </div>
