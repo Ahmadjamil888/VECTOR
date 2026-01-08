@@ -58,7 +58,7 @@ export default function SubscriptionPage() {
             </ul>
           </CardContent>
           <CardFooter>
-            <Button className="w-full bg-primary hover:bg-primary/90 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]">Upgrade to Pro</Button>
+            <Button className="w-full bg-primary hover:bg-primary/90 shadow-[0_0_15px_rgba(168,85,247,0.5)]">Upgrade to Pro</Button>
           </CardFooter>
         </Card>
 
