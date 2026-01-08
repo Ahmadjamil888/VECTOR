@@ -50,19 +50,16 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+   <div className="flex min-h-screen bg-background">
       <div className="hidden lg:flex w-1/2 bg-muted/30 items-center justify-center">
         <div className="max-w-md px-12">
           <div className="flex items-center gap-3 mb-8">
-            <div className="h-10 w-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center glow-box">
-              <BoxIcon className="h-6 w-6" />
-            </div>
+            <img src="/images/logo.png" alt="Vector" className="h-10 w-10 rounded-lg dark:hidden" />
+            <img src="/images/logo-dark-mode.png" alt="Vector" className="h-10 w-10 rounded-lg hidden dark:block" />
             <div className="text-xl font-semibold glow-text">Vector</div>
           </div>
-          <div className="text-4xl font-bold glow-text mb-4">Create your account</div>
-          <div className="text-muted-foreground">
-            Sign up to start analyzing and editing your datasets.
-          </div>
+          <div className="text-4xl font-bold glow-text mb-4">join us</div>
+          <div className="text-muted-foreground">Shape the world by becoming our partner.</div>
         </div>
       </div>
       <div className="flex w-full lg:w-1/2 items-center justify-center p-6">

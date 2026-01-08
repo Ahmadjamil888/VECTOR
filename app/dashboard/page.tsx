@@ -18,6 +18,17 @@ export default function DashboardPage() {
   const [tier, setTier] = useState<string>("free")
   const supabase = createClient()
 
+  const getMaxDatasetCount = (tier: string) => {
+    switch(tier) {
+      case 'pro':
+      case 'premium':
+      case 'enterprise':
+        return Infinity; // unlimited
+      default:
+        return 3; // free tier limit
+    }
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -79,7 +90,7 @@ export default function DashboardPage() {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
   }
 
-  const storageLimitMb = tier === "pro" ? 10240 : tier === "premium" || tier === "enterprise" ? 1048576 : 100
+  const storageLimitMb = tier === "pro" ? 10240 : tier === "premium" || tier === "enterprise" ? 1048576 : 100 // Free tier: 100MB, Pro: 10GB, Enterprise: 1TB
   const storagePercentage = Math.min((storageUsedMb / storageLimitMb) * 100, 100)
 
   return (
@@ -93,10 +104,27 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <UploadDialog>
-             <Button className="gap-2 bg-primary hover:bg-primary/80 text-white dark:text-black shadow-[0_0_15px_rgba(128,149,216,0.5)]">
+             <Button 
+               className="gap-2 bg-primary hover:bg-primary/80 shadow-[0_0_15px_rgba(128,149,216,0.5)]"
+               disabled={datasetCount >= getMaxDatasetCount(tier) && tier !== 'pro' && tier !== 'premium' && tier !== 'enterprise'}
+             >
                <PlusIcon className="h-4 w-4" /> Create New Project
              </Button>
           </UploadDialog>
+          {tier !== 'pro' && tier !== 'premium' && tier !== 'enterprise' && (
+            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
+              <p className="font-medium text-blue-700 dark:text-blue-300">Upgrade to Pro for advanced features:</p>
+              <ul className="mt-1 text-xs text-blue-600 dark:text-blue-400 list-disc pl-4 space-y-1">
+                <li>Unlimited datasets instead of 3</li>
+                <li>10GB storage instead of 100MB</li>
+                <li>Advanced AI agents</li>
+                <li>Priority support</li>
+              </ul>
+              <Link href="/#subscription" className="inline-block mt-2 text-sm font-medium text-blue-700 dark:text-blue-300 hover:underline">
+                Upgrade to Pro →
+              </Link>
+            </div>
+          )}
         </CardContent>
       </Card>
       
@@ -117,6 +145,15 @@ export default function DashboardPage() {
                   <DatabaseIcon className="h-10 w-10 mx-auto mb-3 opacity-20" />
                   <p>No datasets found</p>
                   <p className="text-xs">Upload your first dataset to get started</p>
+                </div>
+             ) : datasetCount >= getMaxDatasetCount(tier) && tier !== 'pro' && tier !== 'premium' && tier !== 'enterprise' ? (
+               <div className="text-center py-8 text-muted-foreground">
+                  <DatabaseIcon className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                  <p>You've reached your dataset limit!</p>
+                  <p className="text-xs">Upgrade to Pro for unlimited datasets</p>
+                  <Link href="/#subscription" className="inline-block mt-2 text-sm text-primary hover:underline">
+                    Upgrade →
+                  </Link>
                 </div>
              ) : (
                 datasets.map((dataset) => (
@@ -158,11 +195,14 @@ export default function DashboardPage() {
               </div>
               <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                 <div 
-                   className="h-full bg-primary transition-all duration-1000 ease-out" 
+                   className={`h-full ${storagePercentage > 90 ? 'bg-red-500' : 'bg-primary'} transition-all duration-1000 ease-out`} 
                    style={{ width: `${storagePercentage}%` }} 
                 />
               </div>
               <p className="text-xs text-muted-foreground text-right">Limit: {storageLimitMb} MB ({tier})</p>
+              {storagePercentage > 90 && tier !== 'pro' && tier !== 'premium' && tier !== 'enterprise' && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">Approaching storage limit. Consider upgrading to Pro.</p>
+              )}
             </div>
              
              <div className="space-y-2">
@@ -172,7 +212,7 @@ export default function DashboardPage() {
                </div>
                <div className="grid grid-cols-2 gap-4 mt-4">
                  <div className="p-3 bg-secondary/50 rounded-lg border border-border/50">
-                    <div className="text-2xl font-bold">{datasetCount}</div>
+                    <div className="text-2xl font-bold">{datasetCount}{tier !== 'pro' && tier !== 'premium' && tier !== 'enterprise' ? ` / ${getMaxDatasetCount(tier)}` : ''}</div>
                     <div className="text-xs text-muted-foreground">Total Datasets</div>
                  </div>
                  <div className="p-3 bg-secondary/50 rounded-lg border border-border/50">

@@ -95,7 +95,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="pt-4">
-            <Button onClick={handleUpdate} className="bg-primary hover:bg-primary/90 text-white dark:text-black shadow-[0_0_15px_rgba(168,85,247,0.5)]">
+            <Button onClick={handleUpdate} className="bg-primary hover:bg-primary/90 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]">
               Save Changes
             </Button>
           </div>

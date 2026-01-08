@@ -18,7 +18,7 @@ export default function LandingPage() {
         <nav className="ml-8 hidden md:flex gap-6 text-sm">
           <Link href="#features" className="text-muted-foreground hover:text-foreground">Features</Link>
           <Link href="#enterprise" className="text-muted-foreground hover:text-foreground">Enterprise</Link>
-          <Link href="/pricing" className="text-muted-foreground hover:text-foreground">Pricing</Link>
+          <Link href="#subscription" className="text-muted-foreground hover:text-foreground">Pricing</Link>
           <Link href="#resources" className="text-muted-foreground hover:text-foreground">Resources</Link>
         </nav>
         <div className="ml-auto flex items-center gap-3">
@@ -100,7 +100,7 @@ export default function LandingPage() {
                         <div className="mt-2 text-muted-foreground">id, product, qty, revenue</div>
                         <div className="mt-2">Apply: remove duplicates, normalize headers, fill missing values</div>
                         <div className="mt-3">
-                          <Button size="sm" className="bg-primary text-white">Run</Button>
+                          <Button size="sm" className="bg-primary">Run</Button>
                           <Button size="sm" variant="outline" className="ml-2">Preview</Button>
                         </div>
                       </div>
@@ -160,7 +160,7 @@ export default function LandingPage() {
                   Suggest: join with customers.json on customer_id; then aggregate revenue by region.
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <Button size="sm" className="bg-primary text-white dark:text-black">Apply suggestion</Button>
+                  <Button size="sm" className="bg-primary">Apply suggestion</Button>
                   <Button size="sm" variant="outline">Dismiss</Button>
                 </div>
               </div>
@@ -208,7 +208,7 @@ export default function LandingPage() {
                   dataset.csv
                   <div className="mt-2 text-muted-foreground">id, name, email, purchase_date</div>
                   <div className="mt-3">
-                    <Button size="sm" className="bg-primary text-white dark:text-black">Fix duplicates</Button>
+                    <Button size="sm" className="bg-primary">Fix duplicates</Button>
                     <Button size="sm" variant="outline" className="ml-2">Preview</Button>
                   </div>
                 </div>
@@ -388,6 +388,60 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+        
+
+          <section id="subscription" className="px-6 md:px-10 py-16 min-h-screen">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-semibold">Subscription Plans</h2>
+            <p className="mt-2 text-muted-foreground">Choose the plan that fits your data science needs.</p>
+            <div className="grid gap-6 md:grid-cols-3 mt-8">
+              <div className="flex flex-col glow-box bg-card/50 border-muted rounded-xl border p-6">
+                <div className="text-xl font-semibold">Free</div>
+                <div className="text-sm text-muted-foreground">For hobbyists and students</div>
+                <div className="mt-4 text-4xl font-bold">$0<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
+                <ul className="grid gap-2 text-sm mt-4">
+                  <li className="flex items-center gap-2">✓ 3 Datasets</li>
+                  <li className="flex items-center gap-2">✓ Basic Cleaning Agents</li>
+                  <li className="flex items-center gap-2">✓ 100MB Storage</li>
+                  <li className="flex items-center gap-2">✓ Community Support</li>
+                </ul>
+                <Button variant="outline" className="mt-6 w-full">Current Plan</Button>
+              </div>
+              <div className="flex flex-col relative border-primary shadow-[0_0_30px_rgba(168,85,247,0.3)] bg-card/80 rounded-xl border p-6">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-lg">
+                  Most Popular
+                </div>
+                <div className="text-xl font-semibold">Pro</div>
+                <div className="text-sm text-muted-foreground">For professional data scientists</div>
+                <div className="mt-4 text-4xl font-bold text-primary">$29<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
+                <ul className="grid gap-2 text-sm mt-4">
+                  <li className="flex items-center gap-2">✓ Unlimited Datasets</li>
+                  <li className="flex items-center gap-2">✓ Advanced AI Agents (Groq Llama 3)</li>
+                  <li className="flex items-center gap-2">✓ 10GB Storage</li>
+                  <li className="flex items-center gap-2">✓ Priority Support</li>
+                  <li className="flex items-center gap-2">✓ API Access</li>
+                </ul>
+                <Button className="mt-6 w-full bg-primary shadow-[0_0_15px_rgba(168,85,247,0.5)]">Upgrade to Pro</Button>
+              </div>
+              <div className="flex flex-col glow-box bg-card/50 border-muted rounded-xl border p-6">
+                <div className="text-xl font-semibold">Enterprise</div>
+                <div className="text-sm text-muted-foreground">For large teams and organizations</div>
+                <div className="mt-4 text-4xl font-bold">$99<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
+                <ul className="grid gap-2 text-sm mt-4">
+                  <li className="flex items-center gap-2">✓ Everything in Pro</li>
+                  <li className="flex items-center gap-2">✓ Custom AI Models</li>
+                  <li className="flex items-center gap-2">✓ 1TB Storage</li>
+                  <li className="flex items-center gap-2">✓ 24/7 Dedicated Support</li>
+                  <li className="flex items-center gap-2">✓ SSO & Audit Logs</li>
+                </ul>
+                <Button variant="outline" className="mt-6 w-full">Contact Sales</Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+
 
         <section className="px-6 md:px-10 py-16 min-h-screen">
           <div className="max-w-6xl mx-auto rounded-2xl bg-card p-8 md:p-12">
@@ -411,7 +465,7 @@ export default function LandingPage() {
                 <div className="mt-3 rounded-lg border p-4 font-mono text-xs">
                   Turn ideas into transformations and publishing actions. Draft edits and preview safely.
                   <div className="mt-3 flex gap-2">
-                    <Button size="sm" className="bg-primary text-white dark:text-black">See how</Button>
+                    <Button size="sm" className="bg-primary">See how</Button>
                     <Button size="sm" variant="outline">Learn more</Button>
                   </div>
                 </div>
@@ -428,54 +482,8 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
-        <section id="subscription" className="px-6 md:px-10 py-16 min-h-screen">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-semibold">Subscription Plans</h2>
-            <p className="mt-2 text-muted-foreground">Choose the plan that fits your data science needs.</p>
-            <div className="grid gap-6 md:grid-cols-3 mt-8">
-              <div className="flex flex-col rounded-xl border bg-card p-6 glow-box bg-card/50 border-muted">
-                <div className="text-xl font-semibold">Free</div>
-                <div className="text-sm text-muted-foreground">For hobbyists and students</div>
-                <div className="mt-4 text-4xl font-bold">$0<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
-                <ul className="grid gap-2 text-sm mt-4">
-                  <li>3 Datasets</li>
-                  <li>Basic Cleaning Agents</li>
-                  <li>100MB Storage</li>
-                  <li>Community Support</li>
-                </ul>
-                <Button variant="outline" className="mt-6 w-full">Current Plan</Button>
-              </div>
-              <div className="flex flex-col rounded-xl border bg-card p-6 glow-box bg-card/50 border-primary">
-                <div className="text-xl font-semibold">Pro</div>
-                <div className="text-sm text-muted-foreground">For professional data scientists</div>
-                <div className="mt-4 text-4xl font-bold">$29<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
-                <ul className="grid gap-2 text-sm mt-4">
-                  <li>Unlimited Datasets</li>
-                  <li>Advanced AI Agents (Groq Llama 3)</li>
-                  <li>10GB Storage</li>
-                  <li>Priority Support</li>
-                  <li>API Access</li>
-                </ul>
-                <Button className="mt-6 w-full">Upgrade to Pro</Button>
-              </div>
-              <div className="flex flex-col rounded-xl border bg-card p-6 glow-box bg-card/50 border-muted">
-                <div className="text-xl font-semibold">Enterprise</div>
-                <div className="text-sm text-muted-foreground">For large teams and organizations</div>
-                <div className="mt-4 text-4xl font-bold">$99<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
-                <ul className="grid gap-2 text-sm mt-4">
-                  <li>Everything in Pro</li>
-                  <li>Custom AI Models</li>
-                  <li>1TB Storage</li>
-                  <li>24/7 Dedicated Support</li>
-                  <li>SSO & Audit Logs</li>
-                </ul>
-                <Button variant="outline" className="mt-6 w-full">Contact Sales</Button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
+   
+       
 
       <footer className="px-6 md:px-10 py-10 border-t">
         <div className="max-w-6xl mx-auto">
@@ -486,7 +494,7 @@ export default function LandingPage() {
               <span>Vector</span>
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <Link href="/pricing" className="hover:text-foreground">Pricing</Link>
+              <Link href="#subscription" className="hover:text-foreground">Pricing</Link>
               <Link href="#features" className="hover:text-foreground">Features</Link>
               <Link href="#resources" className="hover:text-foreground">Resources</Link>
               <Link href="#enterprise" className="hover:text-foreground">Enterprise</Link>

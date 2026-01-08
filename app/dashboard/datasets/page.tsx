@@ -95,7 +95,7 @@ export default function DatasetsPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight glow-text">Datasets</h2>
         <UploadDialog>
-          <Button className="bg-primary hover:bg-primary/80 text-white dark:text-black shadow-[0_0_15px_rgba(128,149,216,0.5)]">
+          <Button className="bg-primary hover:bg-primary/80 shadow-[0_0_15px_rgba(128,149,216,0.5)]">
             <PlusIcon className="mr-2 h-4 w-4" /> Upload Dataset
           </Button>
         </UploadDialog>
