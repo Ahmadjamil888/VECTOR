@@ -79,7 +79,7 @@ export default function DashboardPage() {
     }
 
     fetchData()
-  }, [])
+  }, [supabase])
 
   const formatBytes = (bytes: number, decimals = 2) => {
     if (!+bytes) return '0 Bytes'
@@ -105,7 +105,7 @@ export default function DashboardPage() {
         <CardContent>
           <UploadDialog>
              <Button 
-               className="gap-2 bg-primary hover:bg-primary/80 shadow-[0_0_15px_rgba(128,149,216,0.5)]"
+               className="gap-2 bg-primary hover:bg-primary/80 text-primary-foreground shadow-[0_0_15px_rgba(128,149,216,0.5)]"
                disabled={datasetCount >= getMaxDatasetCount(tier) && tier !== 'pro' && tier !== 'premium' && tier !== 'enterprise'}
              >
                <PlusIcon className="h-4 w-4" /> Create New Project
@@ -149,7 +149,7 @@ export default function DashboardPage() {
              ) : datasetCount >= getMaxDatasetCount(tier) && tier !== 'pro' && tier !== 'premium' && tier !== 'enterprise' ? (
                <div className="text-center py-8 text-muted-foreground">
                   <DatabaseIcon className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                  <p>You've reached your dataset limit!</p>
+                  <p>You&#39;ve reached your dataset limit!</p>
                   <p className="text-xs">Upgrade to Pro for unlimited datasets</p>
                   <Link href="/#subscription" className="inline-block mt-2 text-sm text-primary hover:underline">
                     Upgrade →

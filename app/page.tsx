@@ -100,7 +100,7 @@ export default function LandingPage() {
                         <div className="mt-2 text-muted-foreground">id, product, qty, revenue</div>
                         <div className="mt-2">Apply: remove duplicates, normalize headers, fill missing values</div>
                         <div className="mt-3">
-                          <Button size="sm" className="bg-primary">Run</Button>
+                          <Button size="sm" className="bg-primary text-primary-foreground">Run</Button>
                           <Button size="sm" variant="outline" className="ml-2">Preview</Button>
                         </div>
                       </div>
@@ -160,7 +160,7 @@ export default function LandingPage() {
                   Suggest: join with customers.json on customer_id; then aggregate revenue by region.
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <Button size="sm" className="bg-primary">Apply suggestion</Button>
+                  <Button size="sm" className="bg-primary text-primary-foreground">Apply suggestion</Button>
                   <Button size="sm" variant="outline">Dismiss</Button>
                 </div>
               </div>
@@ -208,7 +208,7 @@ export default function LandingPage() {
                   dataset.csv
                   <div className="mt-2 text-muted-foreground">id, name, email, purchase_date</div>
                   <div className="mt-3">
-                    <Button size="sm" className="bg-primary">Fix duplicates</Button>
+                    <Button size="sm" className="bg-primary text-primary-foreground">Fix duplicates</Button>
                     <Button size="sm" variant="outline" className="ml-2">Preview</Button>
                   </div>
                 </div>
@@ -421,7 +421,7 @@ export default function LandingPage() {
                   <li className="flex items-center gap-2">✓ Priority Support</li>
                   <li className="flex items-center gap-2">✓ API Access</li>
                 </ul>
-                <Button className="mt-6 w-full bg-primary shadow-[0_0_15px_rgba(168,85,247,0.5)]">Upgrade to Pro</Button>
+                <Button className="mt-6 w-full bg-primary text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)]">Upgrade to Pro</Button>
               </div>
               <div className="flex flex-col glow-box bg-card/50 border-muted rounded-xl border p-6">
                 <div className="text-xl font-semibold">Enterprise</div>
@@ -465,7 +465,7 @@ export default function LandingPage() {
                 <div className="mt-3 rounded-lg border p-4 font-mono text-xs">
                   Turn ideas into transformations and publishing actions. Draft edits and preview safely.
                   <div className="mt-3 flex gap-2">
-                    <Button size="sm" className="bg-primary">See how</Button>
+                    <Button size="sm" className="bg-primary text-primary-foreground">See how</Button>
                     <Button size="sm" variant="outline">Learn more</Button>
                   </div>
                 </div>

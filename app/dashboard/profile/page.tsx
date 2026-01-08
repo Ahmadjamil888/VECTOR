@@ -38,7 +38,7 @@ export default function ProfilePage() {
       setLoading(false)
     }
     getUser()
-  }, [])
+  }, [supabase])
 
   const handleUpdate = async () => {
     if (!user) return

@@ -24,7 +24,7 @@ export default function UsagePage() {
       setTotalDatasets(td || 0)
       setPublishedDatasets(pd || 0)
     })()
-  }, [])
+  }, [supabase])
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

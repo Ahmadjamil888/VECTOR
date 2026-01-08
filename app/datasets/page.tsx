@@ -19,7 +19,7 @@ export default function PublicDatasetsPage() {
         .order("publish_name", { ascending: true })
       setItems(data || [])
     })()
-  }, [])
+  }, [supabase])
 
   return (
     <div className="max-w-5xl mx-auto p-6">

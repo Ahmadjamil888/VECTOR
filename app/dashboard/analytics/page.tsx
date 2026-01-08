@@ -21,7 +21,7 @@ export default function AnalyticsPage() {
       setDownloads(dv || 0)
       setViews(vw || 0)
     })()
-  }, [])
+  }, [supabase])
 
   return (
     <div className="flex flex-col gap-4">

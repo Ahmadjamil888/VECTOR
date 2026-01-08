@@ -32,7 +32,7 @@ export default function PublishedPage() {
       setDatasets(data || [])
       setLoading(false)
     })()
-  }, [])
+  }, [supabase])
 
   return (
     <div className="flex flex-col gap-4">

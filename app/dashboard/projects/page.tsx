@@ -28,7 +28,7 @@ export default function ProjectsPage() {
       const { data } = await supabase.from("projects").select("id,name,description,created_at").order("created_at", { ascending: false })
       setProjects(data || [])
     })()
-  }, [])
+  }, [supabase])
 
   const createProject = async () => {
     if (!name.trim()) return
