@@ -89,15 +89,6 @@ export default function LoginPage() {
               <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={loading || !captchaToken}>
                 {loading ? "Signing in..." : "Sign In"}
               </Button>
-              <div className="mt-4">
-                <HCaptcha
-                  ref={captchaRef}
-                  sitekey={process.env.NEXT_PUBLIC_HCAPCHA_SITE_KEY || ""}
-                  onVerify={(token) => {
-                    setCaptchaToken(token);
-                  }}
-                />
-              </div>
             </form>
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
