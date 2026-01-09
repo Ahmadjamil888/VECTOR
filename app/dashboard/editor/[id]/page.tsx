@@ -1,24 +1,199 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChatInterface } from "@/components/chat-interface";
-import { EnhancedChatSidebar } from "@/components/EnhancedChatSidebar";
+import { useEffect, useState, useRef } from "react";
 import { DataGrid } from "@/components/data-grid";
-import { TransformationInterface } from "@/components/TransformationInterface";
+import { SimpleChatSidebar } from "@/components/SimpleChatSidebar";
 import { Button } from "@/components/ui/button";
-import { DownloadIcon, SaveIcon, Loader2Icon, PanelRightCloseIcon, PanelRightOpenIcon } from "lucide-react";
+import { DownloadIcon, SaveIcon, Loader2Icon, SendIcon, SparklesIcon, CheckIcon, PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
 import Papa from "papaparse";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useParams } from "next/navigation";
 
+// AI Sidebar Component - Matches your design theme
+function AISidebar({ 
+  data, 
+  onDataTransform,
+  isOpen,
+  onToggle
+}: { 
+  data: any[], 
+  onDataTransform: (newData: any[], message: string) => void,
+  isOpen: boolean,
+  onToggle: () => void
+}) {
+  const [messages, setMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  const [input, setInput] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const analyzePromptAndTransform = async (prompt: string) => {
+    setIsProcessing(true);
+    
+    try {
+      // Send the prompt to our backend API
+      const response = await fetch('/api/chat-with-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          datasetId: 'temp' // Use a temporary ID for chat purposes
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to process request with AI');
+      }
+
+      const result = await response.json();
+      
+      // Display the AI response
+      setMessages(prev => [...prev, { role: 'assistant', content: result.response }]);
+      
+      // Note: Actual data transformation would happen separately
+      
+    } catch (error: any) {
+      console.error("AI request error:", error);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `Error: ${error.message}. Please try rephrasing your request.` 
+      }]);
+      toast.error("AI request failed");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+
+
+  const handleSend = async () => {
+    if (!input.trim() || isProcessing) return;
+    
+    const userMessage = input.trim();
+    setInput("");
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    
+    await analyzePromptAndTransform(userMessage);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="w-96 border-r bg-background flex flex-col h-full">
+      {/* Header */}
+      <div className="p-4 border-b flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+            <SparklesIcon className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm">AI Assistant</h3>
+            <p className="text-xs text-muted-foreground">Transform your data</p>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onToggle}>
+          <PanelLeftCloseIcon className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.length === 0 && (
+          <div className="text-center text-sm text-muted-foreground mt-12 space-y-4">
+            <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+              <SparklesIcon className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-foreground mb-2">Ready to transform</p>
+              <p className="text-xs">Try these commands:</p>
+            </div>
+            <div className="space-y-2 text-left max-w-xs mx-auto">
+              <div className="p-3 bg-muted/50 rounded-lg border text-xs hover:bg-muted transition-colors">
+                Sort by age descending
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg border text-xs hover:bg-muted transition-colors">
+                Remove rows where price &lt; 10
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg border text-xs hover:bg-muted transition-colors">
+                Add column called total
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {messages.map((msg, idx) => (
+          <div
+            key={idx}
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`max-w-[85%] rounded-lg px-4 py-2.5 text-sm ${
+                msg.role === 'user'
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                  : 'bg-muted border'
+              }`}
+            >
+              {msg.content}
+            </div>
+          </div>
+        ))}
+        
+        {isProcessing && (
+          <div className="flex justify-start">
+            <div className="bg-muted border rounded-lg px-4 py-2.5 flex items-center gap-2">
+              <Loader2Icon className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-sm">Analyzing and transforming...</span>
+            </div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="p-4 border-t bg-muted/30">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="Describe transformation..."
+            className="flex-1 px-4 py-2.5 border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+            disabled={isProcessing}
+          />
+          <Button
+            size="sm"
+            onClick={handleSend}
+            disabled={!input.trim() || isProcessing}
+            className="px-4 shadow-lg shadow-primary/20"
+          >
+            <SendIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main Editor Component
 export default function EditorPage() {
   const [data, setData] = useState<any[]>([]);
   const [stagedData, setStagedData] = useState<any[]>([]);
   const [dirty, setDirty] = useState(false);
   const [datasetName, setDatasetName] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showAISidebar, setShowAISidebar] = useState(true);
   const [showPublish, setShowPublish] = useState(false);
   const [target, setTarget] = useState<"hf" | "kaggle">("hf");
   const [pubTitle, setPubTitle] = useState("");
@@ -26,10 +201,12 @@ export default function EditorPage() {
   const [hfToken, setHfToken] = useState("");
   const [kgUser, setKgUser] = useState("");
   const [kgKey, setKgKey] = useState("");
+  const [pendingChanges, setPendingChanges] = useState<string[]>([]);
   const supabase = createClient();
   const params = useParams();
   const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
   const [filePath, setFilePath] = useState<string>("");
+
   const jsonToRows = (json: any) => {
     if (Array.isArray(json)) return json;
     if (json && typeof json === "object") {
@@ -118,13 +295,15 @@ export default function EditorPage() {
     fetchDataset();
   }, [id, supabase]);
 
+
+
   const handleExport = () => {
-    const csv = Papa.unparse(data);
+    const csv = Papa.unparse(stagedData);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `vector_export_${id}.csv`);
+    link.setAttribute("download", `${datasetName}_export.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -133,14 +312,18 @@ export default function EditorPage() {
   };
 
   const handleSave = async () => {
-     toast.success("Changes saved (Metadata only)");
-     if (data.length > 0) {
+     toast.success("Changes saved");
+     setDirty(false);
+     setPendingChanges([]);
+     setData(stagedData);
+     if (stagedData.length > 0) {
         await supabase
           .from('datasets')
-          .update({ row_count: data.length })
+          .update({ row_count: stagedData.length })
           .eq('id', id);
      }
   };
+
   const handlePush = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -174,178 +357,155 @@ export default function EditorPage() {
       toast.error(e.message || "Publish failed")
     }
   }
+
   const acceptAllEdits = () => {
     setData(stagedData);
     setDirty(false);
+    setPendingChanges([]);
     toast.success("All edits accepted");
   };
-  const buildInitialPrompt = () => {
-    return "your data is analyzed.";
-  };
+
   const onGridChange = (next: any[]) => {
-    setStagedData(next);
-    setDirty(true);
-  };
-  const onChatProposeEdits = (next: any[]) => {
     setStagedData(next);
     setDirty(true);
   };
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2Icon className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading dataset...</span>
+      <div className="flex h-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2Icon className="h-10 w-10 animate-spin text-primary" />
+          <span className="text-sm text-muted-foreground">Loading dataset...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-[100vh] max-h-[100vh] gap-4 overflow-hidden">
-      <div className="flex items-center justify-between">
-        <div>
-           <h2 className="text-xl font-bold glow-text">Editing: {datasetName}</h2>
-           <p className="text-sm text-muted-foreground">
-             {stagedData.length} rows • {stagedData.length > 0 ? Object.keys(stagedData[0]).length : 0} columns
-           </p>
-        </div>
-        <div className="flex gap-2 items-center">
-          {dirty && (
-            <Button variant="default" className="gap-2" onClick={acceptAllEdits}>
-              Accept all edits
+    <div className="flex h-[100vh] max-h-[100vh] overflow-hidden bg-background">
+      {/* Left Sidebar - AI Assistant */}
+      {showAISidebar && (
+        <div className="w-96 border-r bg-background flex flex-col h-full">
+          <div className="p-4 border-b flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <SparklesIcon className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">AI Assistant</h3>
+                <p className="text-xs text-muted-foreground">Chat with your data</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setShowAISidebar(false)}>
+              <PanelLeftCloseIcon className="h-4 w-4" />
             </Button>
-          )}
-          <Button variant="outline" className="gap-2" onClick={() => setShowSidebar(prev => !prev)}>
-            {showSidebar ? <PanelRightCloseIcon className="h-4 w-4" /> : <PanelRightOpenIcon className="h-4 w-4" />} Chat
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={handleSave}>
-            <SaveIcon className="h-4 w-4" /> Save
-          </Button>
-          <Button variant="default" className="gap-2 bg-primary shadow-[0_0_15px_rgba(128,149,216,0.5)]" onClick={handleExport}>
-            <DownloadIcon className="h-4 w-4" /> Export Dataset
-          </Button>
+          </div>
+          <div className="flex-1 overflow-auto p-2">
+            <SimpleChatSidebar 
+              datasetId={id}
+              onClose={() => setShowAISidebar(false)}
+            />
+          </div>
         </div>
-      </div>
-      
-      <div className="flex flex-1 gap-4 overflow-hidden border bg-background">
-        <div className="flex-1 overflow-hidden p-2">
-          <DataGrid data={stagedData} onChange={onGridChange} editable />
-        </div>
-        {showSidebar && (
-          <div className="w-[420px] border-l h-full max-h-[100vh]">
-            <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between p-2 border-b">
-                <div className="text-sm font-medium">Vector AI - Developed by Vector Team</div>
-                <Button variant="outline" size="sm" onClick={() => setShowSidebar(false)}>Close</Button>
-              </div>
-              <div className="flex-1 min-h-0 overflow-auto p-2">
-                <EnhancedChatSidebar 
-                  datasetId={id}
-                  initialPrompt={buildInitialPrompt()}
-                  onApplyChanges={(prompt) => {
-                    // Apply the transformation permanently by making API call to finalize
-                    try {
-                      fetch('/api/transform/finalize', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                          datasetId: id,
-                          transformationPrompt: prompt,
-                        }),
-                      }).then(response => {
-                        if (response.ok) {
-                          toast.success('Changes applied successfully!');
-                          // Refresh the data
-                          const loadDataset = async () => {
-                            try {
-                              if (filePath) {
-                                const { data: fileData, error: storageError } = await supabase
-                                  .storage
-                                  .from('datasets')
-                                  .download(filePath);
+      )}
 
-                                if (storageError) throw storageError;
-
-                                const text = await fileData.text();
-                                const ext = (filePath?.split('.').pop() || datasetName?.split('.').pop() || "").toLowerCase();
-                                if (ext === 'csv') {
-                                  Papa.parse(text, {
-                                    header: true,
-                                    skipEmptyLines: true,
-                                    complete: (results: any) => {
-                                      setData(results.data);
-                                      setStagedData(results.data);
-                                    },
-                                    error: (error: any) => {
-                                      toast.error(`Parse error: ${error.message}`);
-                                    }
-                                  });
-                                } else if (ext === 'json') {
-                                  let parsed: any = [];
-                                  try {
-                                    const json = JSON.parse(text);
-                                    parsed = jsonToRows(json);
-                                  } catch (e: any) {
-                                    toast.error("Invalid JSON file");
-                                  }
-                                  const rows = Array.isArray(parsed) ? parsed : [];
-                                  setData(rows);
-                                  setStagedData(rows);
-                                }
-                              }
-                            } catch (error: any) {
-                              console.error('Error reloading dataset:', error);
-                              toast.error("Failed to reload dataset");
-                            }
-                          };
-                          loadDataset();
-                        } else {
-                          response.json().then(errorData => {
-                            toast.error(errorData.error || 'Failed to apply changes');
-                          });
-                        }
-                      });
-                    } catch (err) {
-                      console.error('Error applying transformation:', err);
-                      toast.error('Error applying transformation');
-                    }
-                  }}
-                  onCancel={() => {
-                    toast.info('Transformation cancelled');
-                  }}
-                />
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="p-4 border-b bg-background">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {!showAISidebar && (
+                <Button variant="outline" size="sm" onClick={() => setShowAISidebar(true)}>
+                  <PanelLeftOpenIcon className="h-4 w-4" />
+                </Button>
+              )}
+              <div>
+                <h2 className="text-xl font-bold glow-text">{datasetName}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {stagedData.length} rows • {stagedData.length > 0 ? Object.keys(stagedData[0]).length : 0} columns
+                  {dirty && <span className="ml-2 text-amber-500">• {pendingChanges.length} pending changes</span>}
+                </p>
               </div>
+            </div>
+            <div className="flex gap-2 items-center">
+              {dirty && (
+                <Button variant="default" className="gap-2" onClick={acceptAllEdits}>
+                  <CheckIcon className="h-4 w-4" /> Accept Changes
+                </Button>
+              )}
+              <Button variant="outline" className="gap-2" onClick={handleSave}>
+                <SaveIcon className="h-4 w-4" /> Save
+              </Button>
+              <Button variant="default" className="gap-2 bg-primary shadow-[0_0_15px_rgba(128,149,216,0.5)]" onClick={handleExport}>
+                <DownloadIcon className="h-4 w-4" /> Export
+              </Button>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Data Grid */}
+        <div className="flex-1 overflow-hidden p-4 bg-background">
+          <div className="h-full border rounded-lg bg-background overflow-hidden">
+            <DataGrid data={stagedData} onChange={onGridChange} editable />
+          </div>
+        </div>
       </div>
-      <div className="fixed bottom-4 right-4 flex gap-2">
-        <Button variant="outline" onClick={() => setShowPublish(true)}>Publish</Button>
-      </div>
+
+      {/* Publish Modal */}
       {showPublish && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-card border rounded-xl w-full max-w-lg p-6">
-            <div className="text-lg font-medium mb-4">Publish to Hugging Face or Kaggle</div>
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <Button variant={target === "hf" ? "default" : "outline"} onClick={() => setTarget("hf")}>Hugging Face</Button>
-              <Button variant={target === "kaggle" ? "default" : "outline"} onClick={() => setTarget("kaggle")}>Kaggle</Button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-card border rounded-xl w-full max-w-lg p-6 shadow-2xl">
+            <div className="text-lg font-semibold mb-4">Publish Dataset</div>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <Button variant={target === "hf" ? "default" : "outline"} onClick={() => setTarget("hf")}>
+                Hugging Face
+              </Button>
+              <Button variant={target === "kaggle" ? "default" : "outline"} onClick={() => setTarget("kaggle")}>
+                Kaggle
+              </Button>
             </div>
             <div className="space-y-3">
-              <input className="w-full border rounded px-3 py-2 bg-background" placeholder="Title" value={pubTitle} onChange={(e) => setPubTitle(e.target.value)} />
-              <textarea className="w-full border rounded px-3 py-2 bg-background" placeholder="Description" value={pubDesc} onChange={(e) => setPubDesc(e.target.value)} />
+              <input 
+                className="w-full border rounded-lg px-4 py-2.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary" 
+                placeholder="Title" 
+                value={pubTitle} 
+                onChange={(e) => setPubTitle(e.target.value)} 
+              />
+              <textarea 
+                className="w-full border rounded-lg px-4 py-2.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]" 
+                placeholder="Description" 
+                value={pubDesc} 
+                onChange={(e) => setPubDesc(e.target.value)} 
+              />
               {target === "hf" ? (
-                <input className="w-full border rounded px-3 py-2 bg-background" placeholder="HF Token (hf_xxx)" value={hfToken} onChange={(e) => setHfToken(e.target.value)} />
+                <input 
+                  className="w-full border rounded-lg px-4 py-2.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary" 
+                  placeholder="HF Token (hf_xxx)" 
+                  type="password"
+                  value={hfToken} 
+                  onChange={(e) => setHfToken(e.target.value)} 
+                />
               ) : (
                 <>
-                  <input className="w-full border rounded px-3 py-2 bg-background" placeholder="Kaggle Username" value={kgUser} onChange={(e) => setKgUser(e.target.value)} />
-                  <input className="w-full border rounded px-3 py-2 bg-background" placeholder="Kaggle API Key" value={kgKey} onChange={(e) => setKgKey(e.target.value)} />
+                  <input 
+                    className="w-full border rounded-lg px-4 py-2.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary" 
+                    placeholder="Kaggle Username" 
+                    value={kgUser} 
+                    onChange={(e) => setKgUser(e.target.value)} 
+                  />
+                  <input 
+                    className="w-full border rounded-lg px-4 py-2.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary" 
+                    placeholder="Kaggle API Key" 
+                    type="password"
+                    value={kgKey} 
+                    onChange={(e) => setKgKey(e.target.value)} 
+                  />
                 </>
               )}
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2 pt-2">
                 <Button variant="ghost" onClick={() => setShowPublish(false)}>Cancel</Button>
-                <Button onClick={handlePush}>Publish</Button>
+                <Button onClick={handlePush} className="shadow-lg shadow-primary/20">Publish</Button>
               </div>
             </div>
           </div>
