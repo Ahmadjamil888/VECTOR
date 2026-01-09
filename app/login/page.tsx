@@ -6,24 +6,42 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BoxIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import HCaptcha from "@hcaptcha/react-hcaptcha"
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRef = useRef<HCaptcha>(null)
 
   const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    
+    if (!captchaToken) {
+      toast.error("Please complete the CAPTCHA")
+      return
+    }
+    
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email, 
+      password,
+      options: { captchaToken }
+    })
     setLoading(false)
     if (error) {
       toast.error(error.message)
+      // Reset CAPTCHA on error
+      if (captchaRef.current) {
+        captchaRef.current.resetCaptcha();
+      }
+      setCaptchaToken(null);
       return
     }
     router.push("/dashboard")
@@ -68,9 +86,18 @@ export default function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="bg-background/50" />
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={loading}>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={loading || !captchaToken}>
                 {loading ? "Signing in..." : "Sign In"}
               </Button>
+              <div className="mt-4">
+                <HCaptcha
+                  ref={captchaRef}
+                  sitekey={process.env.NEXT_PUBLIC_HCAPCHA_SITE_KEY || ""}
+                  onVerify={(token) => {
+                    setCaptchaToken(token);
+                  }}
+                />
+              </div>
             </form>
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">

@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label"
 import { BoxIcon } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { toast } from "sonner"
 import Link from "next/link"
+import HCaptcha from "@hcaptcha/react-hcaptcha"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -17,6 +18,8 @@ export default function SignupPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [checking] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRef = useRef<HCaptcha>(null)
 
   const handleOAuth = async (provider: 'github' | 'google') => {
     try {
@@ -31,6 +34,12 @@ export default function SignupPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!captchaToken) {
+      toast.error("Please complete the CAPTCHA")
+      return
+    }
+    
     setLoading(true)
     try {
       const { error } = await supabase.auth.signUp({
@@ -38,12 +47,23 @@ export default function SignupPage() {
         password,
         options: {
           emailRedirectTo: `${location.origin}/auth/callback`,
+          captchaToken
         },
       })
       if (error) throw error
       toast.success("Check your email to confirm your account. After confirming, you will be redirected to your dashboard.")
+      // Reset CAPTCHA after successful signup
+      if (captchaRef.current) {
+        captchaRef.current.resetCaptcha();
+      }
+      setCaptchaToken(null);
     } catch (error: any) {
       toast.error(error.message)
+      // Reset CAPTCHA on error
+      if (captchaRef.current) {
+        captchaRef.current.resetCaptcha();
+      }
+      setCaptchaToken(null);
     } finally {
       setLoading(false)
     }
@@ -94,9 +114,18 @@ export default function SignupPage() {
                       className="bg-background/50"
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={loading}>
+                  <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={loading || !captchaToken}>
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>
+                  <div className="mt-4">
+                    <HCaptcha
+                      ref={captchaRef}
+                      sitekey={process.env.NEXT_PUBLIC_HCAPCHA_SITE_KEY || ""}
+                      onVerify={(token) => {
+                        setCaptchaToken(token);
+                      }}
+                    />
+                  </div>
                 </form>
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
