@@ -50,8 +50,8 @@ export function SimpleChatSidebar({ datasetId, onClose }: SimpleChatSidebarProps
     setIsLoading(true);
 
     try {
-      // Call the chat API
-      const response = await fetch('/api/chat-with-ai', {
+      // Call the transform dataset API
+      const response = await fetch('/api/transform-dataset', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,11 +68,14 @@ export function SimpleChatSidebar({ datasetId, onClose }: SimpleChatSidebarProps
 
       const data = await response.json();
       
+      // Extract response based on new API format
+      const responseData = data.result?.message || data.insights || data.response || 'Operation completed successfully';
+      
       // Add AI response
       const aiMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: data.response,
+        content: responseData,
         timestamp: new Date(),
       };
 
