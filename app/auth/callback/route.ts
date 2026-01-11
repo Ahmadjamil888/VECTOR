@@ -42,14 +42,25 @@ export async function GET(request: Request) {
     )
     
     try {
-      await supabase.auth.exchangeCodeForSession(code)
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (error) {
+        console.error('Error exchanging code for session:', error);
+        // If it's an email confirmation, redirect to login, otherwise to the origin
+        const fallbackUrl = type === "email_confirm" ? "/login" : "/login";
+        return NextResponse.redirect(new URL(fallbackUrl, request.url));
+      }
     } catch (error) {
       console.error('Error exchanging code for session:', error);
       // If it's an email confirmation, redirect to login, otherwise to the origin
-      const fallbackUrl = type === "email_confirm" ? "/login" : "/dashboard";
+      const fallbackUrl = type === "email_confirm" ? "/login" : "/login";
       return NextResponse.redirect(new URL(fallbackUrl, request.url));
     }
   }
   
+  // For successful OAuth logins (not email confirmations), redirect to dashboard
+  if (type === "oauth") {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
   return NextResponse.redirect(new URL(next, request.url))
 }
