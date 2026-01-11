@@ -3,64 +3,41 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 export async function GET(request: Request) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get("code")
-  const next = requestUrl.searchParams.get("next") || "/dashboard"
-  const type = requestUrl.searchParams.get("type") || "oauth"
-  
-  // Check for error details in the URL as per Supabase documentation
-  const error_code = requestUrl.searchParams.get("error_code")
-  const error_description = requestUrl.searchParams.get("error_description")
-  
-  if (error_code) {
-    console.error('Supabase auth error:', error_code, error_description);
-    // Redirect to login with error information
-    const errorUrl = new URL('/dashboard', request.url);
-    errorUrl.searchParams.set('error', error_description || 'Authentication failed');
-    return NextResponse.redirect(errorUrl);
+  const url = new URL(request.url)
+  const code = url.searchParams.get("code")
+  const next = url.searchParams.get("next") ?? "/dashboard"
+  const origin = "https://vector-e55x.vercel.app"
+
+  if (!code) {
+    return NextResponse.redirect(`${origin}/login`)
   }
 
-  if (code) {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: async () => {
-            const store = await cookies()
-            const all = store.getAll()
-            return all.map(({ name, value }) => ({ name, value }))
-          },
-          setAll: async (list) => {
-            const store = await cookies()
-            for (const { name, value, options } of list) {
-              store.set({ name, value, ...options })
-            }
-          },
+  // ✅ Await cookies ONCE (Next.js 14+)
+  const cookieStore = await cookies()
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
         },
-      }
-    )
-    
-    try {
-      const { error } = await supabase.auth.exchangeCodeForSession(code)
-      
-      if (error) {
-        console.error('Error exchanging code for session:', error);
-        // If it's an email confirmation, redirect to login, otherwise to the origin
-        const fallbackUrl = type === "email_confirm" ? "/login" : "/login";
-        return NextResponse.redirect(new URL(fallbackUrl, request.url));
-      }
-    } catch (error) {
-      console.error('Error exchanging code for session:', error);
-      // If it's an email confirmation, redirect to login, otherwise to the origin
-      const fallbackUrl = type === "email_confirm" ? "/login" : "/login";
-      return NextResponse.redirect(new URL(fallbackUrl, request.url));
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options)
+          })
+        },
+      },
     }
+  )
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+  if (error) {
+    console.error("Supabase OAuth error:", error)
+    return NextResponse.redirect(`${origin}/login`)
   }
-  
-  // For successful OAuth logins (not email confirmations), redirect to dashboard
-  if (type === "oauth") {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-  return NextResponse.redirect(new URL(next, request.url))
+
+  return NextResponse.redirect(`${origin}${next}`)
 }
