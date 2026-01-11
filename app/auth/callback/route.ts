@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   if (error_code) {
     console.error('Supabase auth error:', error_code, error_description);
     // Redirect to login with error information
-    const errorUrl = new URL('/login', request.url);
+    const errorUrl = new URL('/dashboard', request.url);
     errorUrl.searchParams.set('error', error_description || 'Authentication failed');
     return NextResponse.redirect(errorUrl);
   }
