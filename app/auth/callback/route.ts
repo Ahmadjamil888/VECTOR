@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const origin = `${url.protocol}//${url.host}`;
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login`)
+    return NextResponse.redirect(`${origin}/dashboard`)
   }
 
   // ✅ Await cookies ONCE (Next.js 14+)
