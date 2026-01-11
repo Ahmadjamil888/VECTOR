@@ -6,7 +6,9 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const code = url.searchParams.get("code")
   const next = url.searchParams.get("next") ?? "/dashboard"
-  const origin = "https://vector-e55x.vercel.app"
+  
+  // Get the origin from the request URL instead of hardcoding
+  const origin = `${url.protocol}//${url.host}`;
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login`)
@@ -39,7 +41,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login`)
   }
 
-  // For successful OAuth logins, always redirect to dashboard regardless of the next parameter
+  // For successful OAuth logins, always redirect to dashboard
   // This ensures users are taken to the dashboard after logging in with OAuth
   return NextResponse.redirect(`${origin}/dashboard`)
 }
