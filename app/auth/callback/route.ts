@@ -39,5 +39,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login`)
   }
 
-  return NextResponse.redirect(`${origin}${next}`)
+  // For successful OAuth logins, always redirect to dashboard regardless of the next parameter
+  // This ensures users are taken to the dashboard after logging in with OAuth
+  return NextResponse.redirect(`${origin}/dashboard`)
 }
