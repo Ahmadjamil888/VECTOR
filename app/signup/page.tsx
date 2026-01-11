@@ -7,10 +7,10 @@ import { Label } from "@/components/ui/label"
 import { BoxIcon } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 import Link from "next/link"
-import HCaptcha from "@hcaptcha/react-hcaptcha"
+import { ToggleCheckbox } from "@/components/ui/toggle-checkbox"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -18,13 +18,24 @@ export default function SignupPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [checking] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const captchaRef = useRef<HCaptcha>(null)
+  const [isNotARobot, setIsNotARobot] = useState(false)
+  const [acceptTerms, setAcceptTerms] = useState(false)
 
   const handleOAuth = async (provider: 'github' | 'google') => {
+    if (!isNotARobot) {
+      toast.error("Please confirm that you're not a robot")
+      return;
+    }
+    
+    if (!acceptTerms) {
+      toast.error("Please accept the Terms of Service and Privacy Policy")
+      return;
+    }
+    
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
       })
       if (error) throw error
     } catch (error: any) {
@@ -35,8 +46,13 @@ export default function SignupPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!captchaToken) {
-      toast.error("Please complete the CAPTCHA")
+    if (!isNotARobot) {
+      toast.error("Please confirm that you're not a robot")
+      return
+    }
+    
+    if (!acceptTerms) {
+      toast.error("Please accept the Terms of Service and Privacy Policy")
       return
     }
     
@@ -46,24 +62,13 @@ export default function SignupPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${location.origin}/auth/callback`,
-          captchaToken
+          emailRedirectTo: `${location.origin}/auth/callback?type=email_confirm&next=/dashboard`,
         },
       })
       if (error) throw error
       toast.success("Check your email to confirm your account. After confirming, you will be redirected to your dashboard.")
-      // Reset CAPTCHA after successful signup
-      if (captchaRef.current) {
-        captchaRef.current.resetCaptcha();
-      }
-      setCaptchaToken(null);
     } catch (error: any) {
       toast.error(error.message)
-      // Reset CAPTCHA on error
-      if (captchaRef.current) {
-        captchaRef.current.resetCaptcha();
-      }
-      setCaptchaToken(null);
     } finally {
       setLoading(false)
     }
@@ -114,18 +119,33 @@ export default function SignupPage() {
                       className="bg-background/50"
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={loading || !captchaToken}>
+                  <ToggleCheckbox
+                    checked={isNotARobot}
+                    onCheckedChange={setIsNotARobot}
+                    label="I'm not a robot"
+                  />
+                  <div className="mt-4">
+                    <div className="flex items-start space-x-2">
+                      <input
+                        id="terms"
+                        type="checkbox"
+                        checked={acceptTerms}
+                        onChange={(e) => setAcceptTerms(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                      />
+                      <div className="grid gap-1.5 leading-none">
+                        <label
+                          htmlFor="terms"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          I agree to the <a href="https://zehanxtech.com/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline">Terms of Service</a> and <a href="https://zehanxtech.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline">Privacy Policy</a>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={loading || !isNotARobot || !acceptTerms}>
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>
-                  <div className="mt-4">
-                    <HCaptcha
-                      ref={captchaRef}
-                      sitekey={process.env.NEXT_PUBLIC_HCAPCHA_SITE_KEY || ""}
-                      onVerify={(token) => {
-                        setCaptchaToken(token);
-                      }}
-                    />
-                  </div>
                 </form>
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">

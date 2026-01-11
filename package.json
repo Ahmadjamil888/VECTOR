@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "@hcaptcha/react-hcaptcha": "^1.17.4",
+
     "@huggingface/hub": "^1.0.0",
     "@huggingface/inference": "^2.8.1",
     "@langchain/community": "^0.3.37",

@@ -6,25 +6,24 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BoxIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState, useRef } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import HCaptcha from "@hcaptcha/react-hcaptcha"
+import { ToggleCheckbox } from "@/components/ui/toggle-checkbox"
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const captchaRef = useRef<HCaptcha>(null)
+  const [isNotARobot, setIsNotARobot] = useState(false)
 
   const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    if (!captchaToken) {
-      toast.error("Please complete the CAPTCHA")
+    if (!isNotARobot) {
+      toast.error("Please confirm that you're not a robot")
       return
     }
     
@@ -32,16 +31,10 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ 
       email, 
       password,
-      options: { captchaToken }
     })
     setLoading(false)
     if (error) {
       toast.error(error.message)
-      // Reset CAPTCHA on error
-      if (captchaRef.current) {
-        captchaRef.current.resetCaptcha();
-      }
-      setCaptchaToken(null);
       return
     }
     router.push("/dashboard")
@@ -49,12 +42,21 @@ export default function LoginPage() {
   }
 
   const signInWithGoogle = async () => {
-    setLoading(true)
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
-    setLoading(false)
+    if (!isNotARobot) {
+      toast.error("Please confirm that you're not a robot");
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
+      });
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+    setLoading(false);
   }
 
   return (
@@ -86,7 +88,12 @@ export default function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="bg-background/50" />
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={loading || !captchaToken}>
+              <ToggleCheckbox
+                checked={isNotARobot}
+                onCheckedChange={setIsNotARobot}
+                label="I'm not a robot"
+              />
+              <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={loading || !isNotARobot}>
                 {loading ? "Signing in..." : "Sign In"}
               </Button>
             </form>

@@ -5,6 +5,8 @@ import { NextResponse } from "next/server"
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get("code")
+  const next = requestUrl.searchParams.get("next") || "/dashboard"
+  const type = requestUrl.searchParams.get("type") || "oauth"
 
   if (code) {
     const supabase = createServerClient(
@@ -26,8 +28,16 @@ export async function GET(request: Request) {
         },
       }
     )
-    await supabase.auth.exchangeCodeForSession(code)
+    
+    try {
+      await supabase.auth.exchangeCodeForSession(code)
+    } catch (error) {
+      console.error('Error exchanging code for session:', error);
+      // If it's an email confirmation, redirect to login, otherwise to the origin
+      const fallbackUrl = type === "email_confirm" ? "/login" : "/login";
+      return NextResponse.redirect(new URL(fallbackUrl, request.url));
+    }
   }
-
-  return NextResponse.redirect(new URL("/dashboard", request.url))
+  
+  return NextResponse.redirect(new URL(next, request.url))
 }
