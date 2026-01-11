@@ -15,10 +15,25 @@ export default function UsagePage() {
     ;(async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: profile } = await supabase.from("profiles").select("credits_remaining,storage_used_mb").eq("id", user.id).single()
-      setCreditsRemaining(profile?.credits_remaining || 0)
-      setStorageUsedMb(profile?.storage_used_mb || 0)
-
+      
+      // Fetch user profile through API route
+      try {
+        const response = await fetch('/api/user/profile', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const profile = await response.json();
+          setCreditsRemaining(profile?.credits_remaining || 0);
+          setStorageUsedMb(profile?.storage_used_mb || 0);
+        } else {
+          console.error('Failed to fetch profile:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+      
       const { count: td } = await supabase.from("datasets").select("*", { count: "exact", head: true }).eq("user_id", user.id)
       const { count: pd } = await supabase.from("datasets").select("*", { count: "exact", head: true }).eq("user_id", user.id).eq("is_published", true)
       setTotalDatasets(td || 0)

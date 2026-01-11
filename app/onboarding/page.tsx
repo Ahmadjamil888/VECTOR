@@ -25,16 +25,21 @@ export default function OnboardingPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user found')
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
           full_name: fullName,
-          // We could add a 'role' column to profiles later, or store in metadata
           updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
+        }),
+      });
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
 
       toast.success('Welcome to Vector!')
       router.push('/dashboard')

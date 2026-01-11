@@ -59,10 +59,27 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
         toast.error("You must be logged in to upload datasets");
         return;
       }
-      const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single()
+      // Fetch user profile through API route
+      let subscriptionTier = 'free';
+      try {
+        const response = await fetch('/api/user/profile', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const profile = await response.json();
+          subscriptionTier = profile?.subscription_tier || 'free';
+        } else {
+          console.error('Failed to fetch profile:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+      
       const usedMb = await getUsageMb(user.id)
       const incomingMb = Number((file.size / 1024 / 1024).toFixed(3))
-      const limitMb = getTierLimitMb(profile?.subscription_tier)
+      const limitMb = getTierLimitMb(subscriptionTier)
       if (usedMb + incomingMb > limitMb) {
         toast.error("Storage limit reached on Free plan (100MB). Upgrade to add more.")
         setIsOpen(false)
@@ -117,6 +134,27 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
       const newUsed = await getUsageMb(user.id)
       await supabase.from("profiles").update({ storage_used_mb: newUsed }).eq("id", user.id)
 
+      const updatedUsed = await getUsageMb(user.id)
+      // Update user profile through API route
+      try {
+        const response = await fetch('/api/user/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            storage_used_mb: updatedUsed
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to update profile:', response.status);
+        }
+      } catch (error) {
+        console.error('Error updating profile:', error);
+      }
+      
       toast.success("Dataset uploaded successfully");
       setIsOpen(false);
       router.push(`/dashboard/editor/${dataset.id}`);
@@ -140,7 +178,23 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
       try {
          const { data: { user } } = await supabase.auth.getUser()
          if (!user) throw new Error("User not found")
-         const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single()
+         // Fetch user profile through API route
+         let subscriptionTier = 'free';
+         try {
+           const response = await fetch('/api/user/profile', {
+             method: 'GET',
+             credentials: 'include',
+           });
+           
+           if (response.ok) {
+             const profile = await response.json();
+             subscriptionTier = profile?.subscription_tier || 'free';
+           } else {
+             console.error('Failed to fetch profile:', response.status);
+           }
+         } catch (error) {
+           console.error('Error fetching profile:', error);
+         }
          const endpoint = type === 'kaggle' ? "/api/import/kaggle" : "/api/import/hf"
          const body: any = { url }
          if (type === 'kaggle') {
@@ -164,7 +218,7 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
          const blob = new Blob([JSON.stringify(rows)], { type: "application/json" })
          const incomingMb = Number((blob.size / 1024 / 1024).toFixed(3))
          const usedMb = await getUsageMb(user.id)
-         const limitMb = getTierLimitMb(profile?.subscription_tier)
+         const limitMb = getTierLimitMb(subscriptionTier)
          if (usedMb + incomingMb > limitMb) {
            toast.error("Storage limit reached on Free plan (100MB). Upgrade to add more.")
            setIsOpen(false)
@@ -191,7 +245,25 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
             .single()
          if (dbError) throw dbError
          const newUsed = await getUsageMb(user.id)
-         await supabase.from("profiles").update({ storage_used_mb: newUsed }).eq("id", user.id)
+         // Update user profile through API route
+         try {
+           const updateResponse = await fetch('/api/user/profile', {
+             method: 'PUT',
+             headers: {
+               'Content-Type': 'application/json',
+             },
+             credentials: 'include',
+             body: JSON.stringify({
+               storage_used_mb: newUsed
+             }),
+           });
+           
+           if (!updateResponse.ok) {
+             console.error('Failed to update profile:', updateResponse.status);
+           }
+         } catch (updateError) {
+           console.error('Error updating profile:', updateError);
+         }
          
          toast.success("Dataset imported successfully")
          setIsOpen(false)
@@ -210,7 +282,23 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("User not found")
-      const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single()
+      // Fetch user profile through API route
+      let subscriptionTier = 'free';
+      try {
+        const response = await fetch('/api/user/profile', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const profile = await response.json();
+          subscriptionTier = profile?.subscription_tier || 'free';
+        } else {
+          console.error('Failed to fetch profile:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
       const res = await fetch("/api/import/site", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -225,7 +313,7 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
       const blob = new Blob([JSON.stringify(rows)], { type: "application/json" })
       const incomingMb = Number((blob.size / 1024 / 1024).toFixed(3))
       const usedMb = await getUsageMb(user.id)
-      const limitMb = getTierLimitMb(profile?.subscription_tier)
+      const limitMb = getTierLimitMb(subscriptionTier)
       if (usedMb + incomingMb > limitMb) {
         toast.error("Storage limit reached on Free plan (100MB). Upgrade to add more.")
         setIsOpen(false)
@@ -249,8 +337,26 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
         .select()
         .single()
       if (dbError) throw dbError
-      const newUsed = await getUsageMb(user.id)
-      await supabase.from("profiles").update({ storage_used_mb: newUsed }).eq("id", user.id)
+      const finalUsed = await getUsageMb(user.id)
+      // Update user profile through API route
+      try {
+        const response = await fetch('/api/user/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            storage_used_mb: finalUsed
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to update profile:', response.status);
+        }
+      } catch (error) {
+        console.error('Error updating profile:', error);
+      }
       toast.success("Site extracted into dataset")
       setIsOpen(false)
       router.push(`/dashboard/editor/${dataset.id}`)

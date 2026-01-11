@@ -35,8 +35,24 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     const fetchProfile = async () => {
       setIsLoading(true)
       if (session?.user?.id) {
-        const { data } = await supabase.from("profiles").select("*").eq("id", session.user.id).single()
-        setProfile(data)
+        // Fetch user profile through API route
+        try {
+          const response = await fetch('/api/user/profile', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          
+          if (response.ok) {
+            const profile = await response.json();
+            setProfile(profile);
+          } else {
+            console.error('Failed to fetch profile:', response.status);
+            setProfile(null);
+          }
+        } catch (error) {
+          console.error('Error fetching profile:', error);
+          setProfile(null);
+        }
       } else {
         setProfile(null)
       }
