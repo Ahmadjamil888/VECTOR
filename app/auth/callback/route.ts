@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     } catch (error) {
       console.error('Error exchanging code for session:', error);
       // If it's an email confirmation, redirect to login, otherwise to the origin
-      const fallbackUrl = type === "email_confirm" ? "/login" : "/login";
+      const fallbackUrl = type === "email_confirm" ? "/login" : "/dashboard";
       return NextResponse.redirect(new URL(fallbackUrl, request.url));
     }
   }
