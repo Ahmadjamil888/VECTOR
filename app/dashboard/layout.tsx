@@ -49,15 +49,21 @@ export default function DashboardLayout({
       setUser(user)
       
       if (user) {
-        // Fetch user profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-        
-        if (profile) {
-          setProfile(profile)
+        // Fetch user profile through API route
+        try {
+          const response = await fetch('/api/user/profile', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          
+          if (response.ok) {
+            const profile = await response.json();
+            setProfile(profile);
+          } else {
+            console.error('Failed to fetch profile:', response.status);
+          }
+        } catch (error) {
+          console.error('Error fetching profile:', error);
         }
       } else {
         router.push("/login")

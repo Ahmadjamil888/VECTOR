@@ -56,6 +56,7 @@ export function SimpleChatSidebar({ datasetId, onClose }: SimpleChatSidebarProps
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           prompt: inputValue.trim(),
           datasetId,

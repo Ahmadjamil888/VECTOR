@@ -62,14 +62,44 @@ export default function DashboardPage() {
         
         const totalMb = allDatasets?.reduce((acc, curr) => acc + (curr.file_size_mb || 0), 0) || 0
         setStorageUsedMb(Number(totalMb.toFixed(3)))
-        await supabase.from("profiles").update({ storage_used_mb: Number(totalMb.toFixed(3)) }).eq("id", user.id)
+        // Update user profile through API route
+        try {
+          const response = await fetch('/api/user/profile', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              storage_used_mb: Number(totalMb.toFixed(3))
+            }),
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to update profile:', response.status);
+          }
+        } catch (error) {
+          console.error('Error updating profile:', error);
+        }
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("subscription_tier")
-          .eq("id", user.id)
-          .single()
-        setTier(profile?.subscription_tier || "free")
+        // Fetch user profile through API route
+        try {
+          const response = await fetch('/api/user/profile', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          
+          if (response.ok) {
+            const profile = await response.json();
+            setTier(profile?.subscription_tier || "free");
+          } else {
+            console.error('Failed to fetch profile:', response.status);
+            setTier("free");
+          }
+        } catch (error) {
+          console.error('Error fetching profile:', error);
+          setTier("free");
+        }
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error)

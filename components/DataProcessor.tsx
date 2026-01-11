@@ -61,6 +61,7 @@ export default function DataProcessor() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           dataset,
           prompt

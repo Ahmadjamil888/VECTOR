@@ -24,15 +24,22 @@ export default function ProfilePage() {
         setUser(user)
         setEmail(user.email || '')
         
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-        
-        if (profile) {
-          setProfile(profile)
-          setFullName(profile.full_name || '')
+        // Fetch user profile through API route
+        try {
+          const response = await fetch('/api/user/profile', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          
+          if (response.ok) {
+            const profile = await response.json();
+            setProfile(profile);
+            setFullName(profile.full_name || '');
+          } else {
+            console.error('Failed to fetch profile:', response.status);
+          }
+        } catch (error) {
+          console.error('Error fetching profile:', error);
         }
       }
       setLoading(false)
@@ -44,16 +51,25 @@ export default function ProfilePage() {
     if (!user) return
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ full_name: fullName })
-        .eq('id', user.id)
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          full_name: fullName
+        }),
+      });
 
-      if (error) throw error
-      toast.success('Profile updated successfully')
+      if (response.ok) {
+        toast.success('Profile updated successfully');
+      } else {
+        throw new Error('Failed to update profile');
+      }
     } catch (error) {
-      toast.error('Error updating profile')
-      console.error(error)
+      toast.error('Error updating profile');
+      console.error(error);
     }
   }
 
