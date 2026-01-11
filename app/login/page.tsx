@@ -11,6 +11,7 @@ import Link from "next/link"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { ToggleCheckbox } from "@/components/ui/toggle-checkbox"
+import { useEffect } from "react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -18,6 +19,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [isNotARobot, setIsNotARobot] = useState(false)
+  
+  // Handle error messages from auth callback
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const errorParam = urlParams.get('error');
+      
+      if (errorParam) {
+        toast.error(decodeURIComponent(errorParam));
+        
+        // Remove error from URL to prevent showing it again on refresh
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    }
+  }, []);
 
   const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -41,6 +58,18 @@ export default function LoginPage() {
     router.refresh()
   }
 
+  const getURL = () => {
+    let url =
+      process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+      process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+      'http://localhost:3000/'
+    // Make sure to include `https://` when not localhost.
+    url = url.startsWith('http') ? url : `https://${url}`
+    // Make sure to include a trailing `/`.
+    url = url.endsWith('/') ? url : `${url}/`
+    return url
+  }
+  
   const signInWithGoogle = async () => {
     if (!isNotARobot) {
       toast.error("Please confirm that you're not a robot");
@@ -51,7 +80,7 @@ export default function LoginPage() {
     try {
       await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
+        options: { redirectTo: `${getURL()}auth/callback?next=/dashboard` },
       });
     } catch (error: any) {
       toast.error(error.message);

@@ -21,6 +21,18 @@ export default function SignupPage() {
   const [isNotARobot, setIsNotARobot] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
 
+  const getURL = () => {
+    let url =
+      process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+      process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+      'http://localhost:3000/'
+    // Make sure to include `https://` when not localhost.
+    url = url.startsWith('http') ? url : `https://${url}`
+    // Make sure to include a trailing `/`.
+    url = url.endsWith('/') ? url : `${url}/`
+    return url
+  }
+  
   const handleOAuth = async (provider: 'github' | 'google') => {
     if (!isNotARobot) {
       toast.error("Please confirm that you're not a robot")
@@ -35,7 +47,7 @@ export default function SignupPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
+        options: { redirectTo: `${getURL()}auth/callback?next=/dashboard` },
       })
       if (error) throw error
     } catch (error: any) {
@@ -58,11 +70,23 @@ export default function SignupPage() {
     
     setLoading(true)
     try {
+      const getURL = () => {
+        let url =
+          process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+          process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+          'http://localhost:3000/'
+        // Make sure to include `https://` when not localhost.
+        url = url.startsWith('http') ? url : `https://${url}`
+        // Make sure to include a trailing `/`.
+        url = url.endsWith('/') ? url : `${url}/`
+        return url
+      }
+      
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${location.origin}/auth/callback?type=email_confirm&next=/dashboard`,
+          emailRedirectTo: `${getURL()}auth/callback?type=email_confirm&next=/dashboard`,
         },
       })
       if (error) throw error

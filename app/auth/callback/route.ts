@@ -7,6 +7,18 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get("code")
   const next = requestUrl.searchParams.get("next") || "/dashboard"
   const type = requestUrl.searchParams.get("type") || "oauth"
+  
+  // Check for error details in the URL as per Supabase documentation
+  const error_code = requestUrl.searchParams.get("error_code")
+  const error_description = requestUrl.searchParams.get("error_description")
+  
+  if (error_code) {
+    console.error('Supabase auth error:', error_code, error_description);
+    // Redirect to login with error information
+    const errorUrl = new URL('/login', request.url);
+    errorUrl.searchParams.set('error', error_description || 'Authentication failed');
+    return NextResponse.redirect(errorUrl);
+  }
 
   if (code) {
     const supabase = createServerClient(
