@@ -4,12 +4,7 @@ import { NextResponse } from "next/server"
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
-  const code = url.searchParams.get("code")
   
-  if (!code) {
-    return NextResponse.redirect(`${url.origin}/login`)
-  }
-
   const cookieStore = await cookies()
 
   const supabase = createServerClient(
@@ -29,8 +24,16 @@ export async function GET(request: Request) {
     }
   )
 
-  await supabase.auth.exchangeCodeForSession(code)
+  // Get the authorization code if available and try to exchange it
+  const code = url.searchParams.get("code")
+  if (code) {
+    try {
+      await supabase.auth.exchangeCodeForSession(code)
+    } catch (error) {
+      console.error('Error exchanging code for session:', error)
+    }
+  }
 
-  // Redirect directly to dashboard after successful OAuth
+  // Regardless of what happens, always redirect to dashboard
   return NextResponse.redirect(`${url.origin}/dashboard`)
 }
