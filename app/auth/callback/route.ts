@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const origin = `${url.protocol}//${url.host}`;
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/dashboard`)
+    return NextResponse.redirect(`${origin}/login`)
   }
 
   // ✅ Await cookies ONCE (Next.js 14+)
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login`)
   }
 
-  // For successful OAuth logins, always redirect to dashboard
-  // This ensures users are taken to the dashboard after logging in with OAuth
-  return NextResponse.redirect(`${origin}/dashboard`)
+  // For successful OAuth logins, use the next parameter from the URL, defaulting to /dashboard
+  // This ensures users are taken to the intended destination after logging in with OAuth
+  return NextResponse.redirect(`${origin}${next}`)
 }
