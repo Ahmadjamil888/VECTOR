@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 /* ---------------------------------------------
-   ✅ Single source of truth for site URL
+   Single source of truth for site URL
 ---------------------------------------------- */
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -29,24 +29,37 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   /* ---------------------------------------------
-     ✅ Redirect if already logged in
+     Redirect if already logged in (SAFE)
   ---------------------------------------------- */
   useEffect(() => {
+    let mounted = true
+
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession()
-
-      if (data.session) {
-        router.replace("/dashboard")
-        return
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (mounted && data.session) {
+          router.replace("/dashboard")
+        }
+      } catch {
+        // never block render
       }
-
-      setLoading(false)
     }
 
     checkSession()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) router.replace("/dashboard")
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [router])
 
   /* ---------------------------------------------
@@ -67,7 +80,6 @@ export default function LoginPage() {
   ---------------------------------------------- */
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-
     setLoading(true)
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -75,8 +87,9 @@ export default function LoginPage() {
       password,
     })
 
+    setLoading(false)
+
     if (error) {
-      setLoading(false)
       toast.error(error.message)
       return
     }
@@ -97,8 +110,6 @@ export default function LoginPage() {
 
     if (error) toast.error(error.message)
   }
-
-  if (loading) return null
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -199,10 +210,7 @@ export default function LoginPage() {
 
             <p className="text-center text-sm text-muted-foreground">
               No account?{" "}
-              <Link
-                href="/signup"
-                className="underline text-primary"
-              >
+              <Link href="/signup" className="underline text-primary">
                 Create one
               </Link>
             </p>

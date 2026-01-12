@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 /* ---------------------------------------------
-   ✅ Single source of truth for site URL
+   Single source of truth for site URL
 ---------------------------------------------- */
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -30,24 +30,37 @@ export default function SignupPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [acceptTerms, setAcceptTerms] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   /* ---------------------------------------------
-     ✅ Redirect if already logged in
+     Redirect if already logged in (SAFE)
   ---------------------------------------------- */
   useEffect(() => {
+    let mounted = true
+
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession()
-
-      if (data.session) {
-        router.replace("/dashboard")
-        return
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (mounted && data.session) {
+          router.replace("/dashboard")
+        }
+      } catch {
+        // ignore
       }
-
-      setLoading(false)
     }
 
     checkSession()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) router.replace("/dashboard")
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [router])
 
   /* ---------------------------------------------
@@ -101,8 +114,6 @@ export default function SignupPage() {
       "Check your email to confirm your account. You’ll be redirected automatically."
     )
   }
-
-  if (loading) return null
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -230,10 +241,7 @@ export default function SignupPage() {
 
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link
-                href="/login"
-                className="underline text-primary"
-              >
+              <Link href="/login" className="underline text-primary">
                 Sign in
               </Link>
             </p>
