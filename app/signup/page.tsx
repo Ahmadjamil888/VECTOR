@@ -31,18 +31,12 @@ export default function SignupPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const [isNotARobot, setIsNotARobot] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
 
   /* ---------------------------------------------
      OAuth Sign In
   ---------------------------------------------- */
   const handleOAuth = async (provider: "google" | "github") => {
-    if (!isNotARobot) {
-      toast.error("Please confirm you're not a robot")
-      return
-    }
-
     if (!acceptTerms) {
       toast.error("Please accept the Terms & Privacy Policy")
       return
@@ -65,11 +59,6 @@ export default function SignupPage() {
   ---------------------------------------------- */
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!isNotARobot) {
-      toast.error("Please confirm you're not a robot")
-      return
-    }
 
     if (!acceptTerms) {
       toast.error("Please accept the Terms & Privacy Policy")
@@ -157,11 +146,6 @@ export default function SignupPage() {
                 />
               </div>
 
-              <ToggleCheckbox
-                checked={isNotARobot}
-                onCheckedChange={setIsNotARobot}
-                label="I'm not a robot"
-              />
 
               <div className="flex items-start gap-2">
                 <input

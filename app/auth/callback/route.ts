@@ -5,16 +5,11 @@ import { NextResponse } from "next/server"
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const code = url.searchParams.get("code")
-  const next = url.searchParams.get("next") ?? "/dashboard"
   
-  // Get the origin from the request URL instead of hardcoding
-  const origin = `${url.protocol}//${url.host}`;
-
   if (!code) {
-    return NextResponse.redirect(`${origin}/login`)
+    return NextResponse.redirect(`${url.origin}/login`)
   }
 
-  // ✅ Await cookies ONCE (Next.js 14+)
   const cookieStore = await cookies()
 
   const supabase = createServerClient(
@@ -34,14 +29,8 @@ export async function GET(request: Request) {
     }
   )
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code)
+  await supabase.auth.exchangeCodeForSession(code)
 
-  if (error) {
-    console.error("Supabase OAuth error:", error)
-    return NextResponse.redirect(`${origin}/login`)
-  }
-
-  // For successful OAuth logins, use the next parameter from the URL, defaulting to /dashboard
-  // This ensures users are taken to the intended destination after logging in with OAuth
-  return NextResponse.redirect(`${origin}${next}`)
+  // Redirect directly to dashboard after successful OAuth
+  return NextResponse.redirect(`${url.origin}/dashboard`)
 }

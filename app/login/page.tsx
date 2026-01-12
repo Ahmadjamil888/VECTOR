@@ -31,7 +31,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const [isNotARobot, setIsNotARobot] = useState(false)
 
   /* ---------------------------------------------
      Show OAuth / callback errors once
@@ -51,11 +50,6 @@ export default function LoginPage() {
   ---------------------------------------------- */
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!isNotARobot) {
-      toast.error("Please confirm you're not a robot")
-      return
-    }
 
     setLoading(true)
 
@@ -79,11 +73,6 @@ export default function LoginPage() {
      OAuth Login
   ---------------------------------------------- */
   const signInWithGoogle = async () => {
-    if (!isNotARobot) {
-      toast.error("Please confirm you're not a robot")
-      return
-    }
-
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -157,11 +146,6 @@ export default function LoginPage() {
                 />
               </div>
 
-              <ToggleCheckbox
-                checked={isNotARobot}
-                onCheckedChange={setIsNotARobot}
-                label="I'm not a robot"
-              />
 
               <Button
                 type="submit"
