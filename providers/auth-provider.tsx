@@ -33,7 +33,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       if (session?.user?.id) {
         // Fetch user profile through API route
         try {
@@ -44,6 +44,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
           
           if (response.ok) {
             const profile = await response.json();
+            // Handle null response when user is not authenticated
             setProfile(profile);
           } else {
             console.error('Failed to fetch profile:', response.status);
@@ -56,7 +57,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
       } else {
         setProfile(null)
       }
-      setIsLoading(false)
+      setIsLoading(false);
     }
     fetchProfile()
   }, [session, supabase])

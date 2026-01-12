@@ -1,9 +1,9 @@
-import "./globals.css";
+import type { Metadata } from "next";
 import { Public_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ThemeProvider } from "next-themes";
-import type { Metadata } from "next";
+import AuthProvider from "@/providers/auth-provider";
 
 const publicSans = Public_Sans({
   subsets: ["latin"],
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -94,10 +94,12 @@ export default function RootLayout({
           defaultTheme="dark"
           enableSystem={false}
         >
-          <NuqsAdapter>
-            {children}
-            <Toaster />
-          </NuqsAdapter>
+          <AuthProvider>
+            <NuqsAdapter>
+              {children}
+              <Toaster />
+            </NuqsAdapter>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

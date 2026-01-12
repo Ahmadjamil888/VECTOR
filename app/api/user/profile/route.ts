@@ -21,10 +21,8 @@ export async function GET(req: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (!user || authError) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      // Return null profile for unauthenticated users instead of 401
+      return NextResponse.json(null, { status: 200 });
     }
 
     // Fetch user profile
