@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ToggleCheckbox } from "@/components/ui/toggle-checkbox"
 
 /* ---------------------------------------------
    ✅ Single source of truth for site URL
@@ -30,13 +29,31 @@ export default function SignupPage() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   /* ---------------------------------------------
-     OAuth Sign In
+     ✅ Redirect if already logged in
   ---------------------------------------------- */
-  const handleOAuth = async (provider: "google" | "github") => {
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession()
+
+      if (data.session) {
+        router.replace("/dashboard")
+        return
+      }
+
+      setLoading(false)
+    }
+
+    checkSession()
+  }, [router])
+
+  /* ---------------------------------------------
+     OAuth Signup
+  ---------------------------------------------- */
+  const handleOAuth = async (provider: "google") => {
     if (!acceptTerms) {
       toast.error("Please accept the Terms & Privacy Policy")
       return
@@ -45,17 +62,15 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${SITE_URL}/auth/callback?next=/dashboard`,
+        redirectTo: `${SITE_URL}/auth/callback`,
       },
     })
 
-    if (error) {
-      toast.error(error.message)
-    }
+    if (error) toast.error(error.message)
   }
 
   /* ---------------------------------------------
-     Email + Password Sign Up
+     Email + Password Signup
   ---------------------------------------------- */
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,7 +86,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${SITE_URL}/auth/callback?type=email_confirm&next=/dashboard`,
+        emailRedirectTo: `${SITE_URL}/auth/callback`,
       },
     })
 
@@ -83,9 +98,11 @@ export default function SignupPage() {
     }
 
     toast.success(
-      "Check your email to confirm your account. You’ll be redirected after confirmation."
+      "Check your email to confirm your account. You’ll be redirected automatically."
     )
   }
+
+  if (loading) return null
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -103,9 +120,14 @@ export default function SignupPage() {
               alt="Vector"
               className="h-10 w-10 rounded-lg hidden dark:block"
             />
-            <div className="text-xl font-semibold glow-text">Vector</div>
+            <div className="text-xl font-semibold glow-text">
+              Vector
+            </div>
           </div>
-          <h1 className="text-4xl font-bold glow-text mb-4">Join us</h1>
+
+          <h1 className="text-4xl font-bold glow-text mb-4">
+            Join us
+          </h1>
           <p className="text-muted-foreground">
             Shape the future by becoming our partner.
           </p>
@@ -116,7 +138,9 @@ export default function SignupPage() {
       <div className="flex w-full lg:w-1/2 items-center justify-center p-6">
         <Card className="w-full max-w-sm glow-box bg-card/60 backdrop-blur">
           <CardHeader>
-            <CardTitle className="text-2xl glow-text">Create account</CardTitle>
+            <CardTitle className="text-2xl glow-text">
+              Create account
+            </CardTitle>
             <CardDescription>
               Sign up with email or continue with Google
             </CardDescription>
@@ -145,7 +169,6 @@ export default function SignupPage() {
                   required
                 />
               </div>
-
 
               <div className="flex items-start gap-2">
                 <input

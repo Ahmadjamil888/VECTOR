@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ToggleCheckbox } from "@/components/ui/toggle-checkbox"
 
 /* ---------------------------------------------
    ✅ Single source of truth for site URL
@@ -30,7 +29,25 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  /* ---------------------------------------------
+     ✅ Redirect if already logged in
+  ---------------------------------------------- */
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession()
+
+      if (data.session) {
+        router.replace("/dashboard")
+        return
+      }
+
+      setLoading(false)
+    }
+
+    checkSession()
+  }, [router])
 
   /* ---------------------------------------------
      Show OAuth / callback errors once
@@ -58,15 +75,13 @@ export default function LoginPage() {
       password,
     })
 
-    setLoading(false)
-
     if (error) {
+      setLoading(false)
       toast.error(error.message)
       return
     }
 
-    router.push("/dashboard")
-    router.refresh()
+    router.replace("/dashboard")
   }
 
   /* ---------------------------------------------
@@ -76,14 +91,14 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${SITE_URL}/auth/callback?next=/dashboard`,
+        redirectTo: `${SITE_URL}/auth/callback`,
       },
     })
 
-    if (error) {
-      toast.error(error.message)
-    }
+    if (error) toast.error(error.message)
   }
+
+  if (loading) return null
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -101,8 +116,11 @@ export default function LoginPage() {
               alt="Vector"
               className="h-10 w-10 rounded-lg hidden dark:block"
             />
-            <div className="text-xl font-semibold glow-text">Vector</div>
+            <div className="text-xl font-semibold glow-text">
+              Vector
+            </div>
           </div>
+
           <h1 className="text-4xl font-bold glow-text mb-4">
             Welcome back
           </h1>
@@ -116,7 +134,9 @@ export default function LoginPage() {
       <div className="flex w-full lg:w-1/2 items-center justify-center p-6">
         <Card className="w-full max-w-sm glow-box bg-card/60 backdrop-blur">
           <CardHeader>
-            <CardTitle className="text-2xl glow-text">Login</CardTitle>
+            <CardTitle className="text-2xl glow-text">
+              Login
+            </CardTitle>
             <CardDescription>
               Use your email or continue with Google
             </CardDescription>
@@ -145,7 +165,6 @@ export default function LoginPage() {
                   required
                 />
               </div>
-
 
               <Button
                 type="submit"
