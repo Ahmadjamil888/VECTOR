@@ -96,7 +96,7 @@ export default function EditorPage() {
     if (datasetId) {
       fetchDataset();
     }
-  }, [datasetId]);
+  }, [datasetId, fetchDataset]);
 
   const parseCSV = (csvText: string) => {
     Papa.parse(csvText, {
