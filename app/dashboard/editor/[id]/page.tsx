@@ -11,13 +11,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+
 import { 
   Dialog, 
   DialogContent, 
@@ -106,7 +100,7 @@ export default function EditorPage() {
 
   const parseCSV = (csvText: string) => {
     Papa.parse(csvText, {
-      complete: (results) => {
+      complete: (results: Papa.ParseResult<any>) => {
         if (results.data.length > 0) {
           setHeaders(results.data[0] as string[]);
           setParsedData(results.data.slice(1) as any[][]);
@@ -304,18 +298,14 @@ export default function EditorPage() {
             <CardContent className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Select Column</label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a column" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {headers.map((header, index) => (
-                      <SelectItem key={index} value={index.toString()}>
-                        {header}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select className="w-full p-2 border rounded text-sm">
+                  <option value="">Choose a column</option>
+                  {headers.map((header, index) => (
+                    <option key={index} value={index.toString()}>
+                      {header}
+                    </option>
+                  ))}
+                </select>
               </div>
               
               <div className="space-y-2">
