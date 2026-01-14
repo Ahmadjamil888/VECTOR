@@ -57,9 +57,9 @@ export default function AdvancedEditorPage() {
 
   useEffect(() => {
     if (datasetId) {
-      fetchDataset()
+      fetchDataset();
     }
-  }, [datasetId])
+  }, [datasetId]);
 
   useEffect(() => {
     scrollToBottom()
@@ -323,10 +323,10 @@ export default function AdvancedEditorPage() {
               <p className="mt-2">Ask me to help modify your dataset</p>
               <p className="text-sm mt-1">Examples:</p>
               <ul className="text-xs mt-2 space-y-1">
-                <li>• "Remove duplicates from the email column"</li>
-                <li>• "Filter rows where age &gt; 25"</li>
-                <li>• "Add a new column for full names"</li>
-                <li>• "Sort by date column descending"</li>
+                <li>• &quot;Remove duplicates from the email column&quot;</li>
+                <li>• &quot;Filter rows where age &gt; 25&quot;</li>
+                <li>• &quot;Add a new column for full names&quot;</li>
+                <li>• &quot;Sort by date column descending&quot;</li>
               </ul>
             </div>
           )}
