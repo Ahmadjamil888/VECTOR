@@ -102,7 +102,7 @@ export default function EditorPage() {
     } finally {
       setLoading(false);
     }
-  }, [datasetId]);
+  }, [datasetId, loadData]);
 
   useEffect(() => {
     if (datasetId) {
