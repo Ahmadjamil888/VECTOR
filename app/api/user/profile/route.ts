@@ -1,107 +1,112 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 
-export async function GET(req: NextRequest) {
-  try {
-    const cookieStore = await cookies();
-    
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
+/* ---------------------------------------------
+   Helper (ASYNC — required in Next 14+)
+---------------------------------------------- */
+async function createSupabase() {
+  const cookieStore = await cookies() // ✅ REQUIRED
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
         },
-      }
-    );
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (!user || authError) {
-      // Return null profile for unauthenticated users instead of 401
-      return NextResponse.json(null, { status: 200 });
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+}
+
+/* ---------------------------------------------
+   GET — NEVER 401 (prevents redirect loop)
+---------------------------------------------- */
+export async function GET() {
+  try {
+    const supabase = await createSupabase()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json(null)
     }
 
-    // Fetch user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single()
 
-    if (profileError) {
-      console.error('Error fetching profile:', profileError);
-      return NextResponse.json(
-        { error: 'Failed to fetch profile' },
-        { status: 500 }
-      );
+    if (error) {
+      console.error("Profile fetch error:", error)
+      return NextResponse.json(null)
     }
 
-    return NextResponse.json(profile);
-  } catch (error: any) {
-    console.error('Error in /api/user/profile:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json(profile)
+  } catch (err) {
+    console.error("GET /api/user/profile:", err)
+    return NextResponse.json(null)
   }
 }
 
+/* ---------------------------------------------
+   PUT — AUTH REQUIRED
+---------------------------------------------- */
 export async function PUT(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-        },
-      }
-    );
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (!user || authError) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    const supabase = await createSupabase()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { full_name, storage_used_mb } = await req.json();
+    const body = await req.json()
 
-    // Prepare update object
-    const updateObj: any = {};
-    if (full_name !== undefined) updateObj.full_name = full_name;
-    if (storage_used_mb !== undefined) updateObj.storage_used_mb = storage_used_mb;
+    const update: Record<string, any> = {}
+    if (body.full_name !== undefined) update.full_name = body.full_name
+    if (body.storage_used_mb !== undefined)
+      update.storage_used_mb = body.storage_used_mb
 
-    // Update user profile
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update(updateObj)
-      .eq('id', user.id);
-
-    if (updateError) {
-      console.error('Error updating profile:', updateError);
+    if (Object.keys(update).length === 0) {
       return NextResponse.json(
-        { error: 'Failed to update profile' },
+        { error: "Nothing to update" },
+        { status: 400 }
+      )
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update(update)
+      .eq("id", user.id)
+
+    if (error) {
+      console.error("Profile update error:", error)
+      return NextResponse.json(
+        { error: "Failed to update profile" },
         { status: 500 }
-      );
+      )
     }
 
-    return NextResponse.json({ message: 'Profile updated successfully' });
-  } catch (error: any) {
-    console.error('Error in /api/user/profile PUT:', error);
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error("PUT /api/user/profile:", err)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
-    );
+    )
   }
 }

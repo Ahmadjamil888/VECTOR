@@ -1,39 +1,27 @@
-import { createServerClient } from "@supabase/ssr"
-import { NextResponse, type NextRequest } from "next/server"
+// Conceptual Clerk middleware implementation
+// In a real implementation, you would use: import { clerkMiddleware } from '@clerk/nextjs/server';
 
-export async function middleware(request: NextRequest) {
-  const response = NextResponse.next()
+// export default clerkMiddleware();
+// export const config = {
+//   matcher: [
+//     // Skip Next.js internals and all static files, unless found in search params
+//     '/((?!_next|[^?]*\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+//     // Always run for API routes
+//     '/(api|trpc)(.*)',
+//   ],
+// };
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  const isProtectedRoute = request.nextUrl.pathname.startsWith("/dashboard")
-
-  if (!session && isProtectedRoute) {
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
-
-  return response
+// Placeholder middleware
+export default function middleware(request: any) {
+  // This is a placeholder until Clerk is properly installed
+  return undefined;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
-}
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
+};
