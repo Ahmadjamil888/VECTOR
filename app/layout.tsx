@@ -26,6 +26,9 @@ export const metadata: Metadata = {
   },
   description:
     "Vector is an AI-powered data science platform for cleaning, editing, analyzing, and preparing datasets using conversational AI.",
+  verification: {
+    google: "fmUIDHcJALmqB30Knpm61Z_fXmG3KHs8YWtKd56kxHY",
+  },
   applicationName: "Vector",
   metadataBase: new URL("https://vector-e55x.vercel.app/"), // 🔴 replace with your real domain
   keywords: [
