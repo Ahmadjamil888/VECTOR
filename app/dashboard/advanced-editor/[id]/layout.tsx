@@ -1,0 +1,13 @@
+export default function AdvancedEditorLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col h-screen">
+      <main className="flex-1 overflow-hidden">
+        {children}
+      </main>
+    </div>
+  )
+}

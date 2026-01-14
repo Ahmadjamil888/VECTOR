@@ -157,7 +157,7 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
       
       toast.success("Dataset uploaded successfully");
       setIsOpen(false);
-      router.push(`/dashboard/editor/${dataset.id}`);
+      router.push(`/dashboard/advanced-editor/${dataset.id}`);
 
     } catch (error: any) {
       console.error('Full error:', error);
@@ -267,7 +267,7 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
          
          toast.success("Dataset imported successfully")
          setIsOpen(false)
-         router.push(`/dashboard/editor/${dataset.id}`)
+         router.push(`/dashboard/advanced-editor/${dataset.id}`)
          
       } catch (error: any) {
           toast.error(`Import failed: ${error.message}`)
@@ -359,7 +359,7 @@ export function UploadDialog({ children }: { children: React.ReactNode }) {
       }
       toast.success("Site extracted into dataset")
       setIsOpen(false)
-      router.push(`/dashboard/editor/${dataset.id}`)
+      router.push(`/dashboard/advanced-editor/${dataset.id}`)
     } catch (e: any) {
       toast.error(e.message || "Extraction failed")
     } finally {
