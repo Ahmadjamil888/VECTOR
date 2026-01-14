@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { 
@@ -63,7 +63,19 @@ export default function EditorPage() {
   const [editHistory, setEditHistory] = useState<EditHistory[]>([]);
   const [currentVersion, setCurrentVersion] = useState(0);
 
-  const loadData = async (filePath: string) => {
+  const parseCSV = useCallback((csvText: string) => {
+    Papa.parse(csvText, {
+      complete: (results: any) => {
+        if (results.data.length > 0) {
+          setHeaders(results.data[0] as string[]);
+          setParsedData(results.data.slice(1) as any[][]);
+        }
+      },
+      skipEmptyLines: true
+    });
+  }, [setHeaders, setParsedData]);
+
+  const loadData = useCallback(async (filePath: string) => {
     try {
       const response = await fetch(`/api/datasets/${datasetId}/data`);
       if (response.ok) {
@@ -74,9 +86,9 @@ export default function EditorPage() {
     } catch (error) {
       console.error('Error loading data:', error);
     }
-  };
+  }, [datasetId, parseCSV]);
 
-  const fetchDataset = async () => {
+  const fetchDataset = useCallback(async () => {
     try {
       const response = await fetch(`/api/datasets/${datasetId}`);
       if (response.ok) {
@@ -90,25 +102,13 @@ export default function EditorPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [datasetId]);
 
   useEffect(() => {
     if (datasetId) {
       fetchDataset();
     }
   }, [datasetId, fetchDataset]);
-
-  const parseCSV = (csvText: string) => {
-    Papa.parse(csvText, {
-      complete: (results: any) => {
-        if (results.data.length > 0) {
-          setHeaders(results.data[0] as string[]);
-          setParsedData(results.data.slice(1) as any[][]);
-        }
-      },
-      skipEmptyLines: true
-    });
-  };
 
   const handleSave = async () => {
     setSaving(true);
