@@ -21,10 +21,8 @@ export function Sidebar() {
   const navItems = [
     { href: "/dashboard", icon: HomeIcon, label: "Overview" },
     { href: "/dashboard/datasets", icon: FileTextIcon, label: "Your Datasets" },
-    { href: "/dashboard/editor", icon: PencilIcon, label: "Editor" },
     { href: "/dashboard/published", icon: DatabaseIcon, label: "Published" },
     { href: "/dashboard/subscription", icon: CreditCardIcon, label: "Subscription" },
-    { href: "/dashboard/settings", icon: SettingsIcon, label: "Settings" },
     { href: "/dashboard/usage", icon: ActivityIcon, label: "Usage" },
   ];
 
