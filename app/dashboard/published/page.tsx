@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { 
   Card, 
@@ -106,7 +107,7 @@ export default function PublishedPage() {
       <div>
         <h1 className="text-3xl font-bold">Published Datasets</h1>
         <p className="text-muted-foreground mt-2">
-          Datasets you've shared with the community
+          Datasets you&apos;ve shared with the community
         </p>
       </div>
 
@@ -115,10 +116,11 @@ export default function PublishedPage() {
           <Card key={dataset.id} className="overflow-hidden">
             {dataset.thumbnail_url && (
               <div className="h-32 bg-muted relative">
-                <img 
+                <Image 
                   src={dataset.thumbnail_url} 
                   alt={dataset.publish_name}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
             )}

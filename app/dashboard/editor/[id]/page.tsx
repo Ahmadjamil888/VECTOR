@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { 
@@ -63,13 +63,7 @@ export default function EditorPage() {
   const [editHistory, setEditHistory] = useState<EditHistory[]>([]);
   const [currentVersion, setCurrentVersion] = useState(0);
 
-  useEffect(() => {
-    if (datasetId) {
-      fetchDataset();
-    }
-  }, [datasetId]);
-
-  const fetchDataset = async () => {
+  const fetchDataset = useCallback(async () => {
     try {
       const response = await fetch(`/api/datasets/${datasetId}`);
       if (response.ok) {
@@ -83,7 +77,13 @@ export default function EditorPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [datasetId]);
+
+  useEffect(() => {
+    if (datasetId) {
+      fetchDataset();
+    }
+  }, [datasetId]);
 
   const loadData = async (filePath: string) => {
     try {
@@ -100,7 +100,7 @@ export default function EditorPage() {
 
   const parseCSV = (csvText: string) => {
     Papa.parse(csvText, {
-      complete: (results: Papa.ParseResult<any>) => {
+      complete: (results: any) => {
         if (results.data.length > 0) {
           setHeaders(results.data[0] as string[]);
           setParsedData(results.data.slice(1) as any[][]);
@@ -195,7 +195,7 @@ export default function EditorPage() {
       <div className="text-center py-12">
         <h2 className="text-xl font-semibold">Dataset not found</h2>
         <p className="text-muted-foreground mt-2">
-          The dataset you're looking for doesn't exist or you don't have access to it.
+          The dataset you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.
         </p>
         <Button className="mt-4" onClick={() => router.push('/dashboard/datasets')}>
           Back to Datasets
