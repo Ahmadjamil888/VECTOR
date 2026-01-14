@@ -1,7 +1,11 @@
+"use client"
+
 import { Button } from "@/components/ui/button";
 import { FileTextIcon, DatabaseIcon, ShareIcon, TrendingUpIcon, ShieldIcon, UsersIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="px-6 h-16 flex items-center border-b sticky top-0 z-50 bg-background/80 backdrop-blur">
@@ -130,7 +134,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             <Button 
               className="w-full" 
-              onClick={() => window.location.href = '/dashboard/datasets'}
+              onClick={() => router.push('/dashboard/datasets')}
             >
               View All Datasets
             </Button>
