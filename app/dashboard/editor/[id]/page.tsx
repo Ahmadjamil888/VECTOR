@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { 
@@ -63,7 +63,20 @@ export default function EditorPage() {
   const [editHistory, setEditHistory] = useState<EditHistory[]>([]);
   const [currentVersion, setCurrentVersion] = useState(0);
 
-  const fetchDataset = useCallback(async () => {
+  const loadData = async (filePath: string) => {
+    try {
+      const response = await fetch(`/api/datasets/${datasetId}/data`);
+      if (response.ok) {
+        const text = await response.text();
+        setRawData(text);
+        parseCSV(text);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  };
+
+  const fetchDataset = async () => {
     try {
       const response = await fetch(`/api/datasets/${datasetId}`);
       if (response.ok) {
@@ -77,26 +90,13 @@ export default function EditorPage() {
     } finally {
       setLoading(false);
     }
-  }, [datasetId]);
+  };
 
   useEffect(() => {
     if (datasetId) {
       fetchDataset();
     }
   }, [datasetId]);
-
-  const loadData = async (filePath: string) => {
-    try {
-      const response = await fetch(`/api/datasets/${datasetId}/data`);
-      if (response.ok) {
-        const text = await response.text();
-        setRawData(text);
-        parseCSV(text);
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-    }
-  };
 
   const parseCSV = (csvText: string) => {
     Papa.parse(csvText, {

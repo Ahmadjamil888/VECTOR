@@ -4,8 +4,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: datasetId } = await params;
   try {
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -26,7 +27,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const datasetId = params.id;
+
 
     // Check if dataset exists and belongs to user
     const { data: dataset, error: fetchError } = await supabase
