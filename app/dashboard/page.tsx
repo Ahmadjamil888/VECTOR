@@ -7,7 +7,7 @@ export default async function DashboardPage() {
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Welcome back, {user?.firstName || 'there'}!</h1>
-        <p className="text-muted-foreground mt-2">Here's what's happening with your data projects today.</p>
+        <p className="text-muted-foreground mt-2">Here&apos;s what&apos;s happening with your data projects today.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
