@@ -324,7 +324,7 @@ export default function AdvancedEditorPage() {
               <p className="text-sm mt-1">Examples:</p>
               <ul className="text-xs mt-2 space-y-1">
                 <li>• "Remove duplicates from the email column"</li>
-                <li>• "Filter rows where age > 25"</li>
+                <li>• "Filter rows where age &gt; 25"</li>
                 <li>• "Add a new column for full names"</li>
                 <li>• "Sort by date column descending"</li>
               </ul>
