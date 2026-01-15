@@ -19,6 +19,9 @@ import {
 import { toast } from "sonner"
 import Papa from "papaparse"
 import { createClient } from "@/lib/supabase/client"
+import { getDatasetService } from "@/lib/adk/dataset-service"
+import { getDatasetDataService, saveDatasetDataService } from "@/lib/adk/data-service"
+import { modifyDatasetWithAI } from "@/lib/adk/ai-service"
 
 interface Dataset {
   id: string
@@ -71,18 +74,13 @@ export default function AdvancedEditorPage() {
 
   const fetchDataset = async () => {
     try {
-      const response = await fetch(`/api/datasets/${datasetId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setDataset(data)
-        await loadData(data.file_path)
-      } else {
-        toast.error("Dataset not found")
-        router.push("/dashboard/datasets")
-      }
+      const data = await getDatasetService(datasetId)
+      setDataset(data)
+      await loadData(data.file_path)
     } catch (error) {
       console.error("Error fetching dataset:", error)
       toast.error("Failed to load dataset")
+      router.push("/dashboard/datasets")
     } finally {
       setLoading(false)
     }
@@ -90,12 +88,9 @@ export default function AdvancedEditorPage() {
 
   const loadData = async (filePath: string) => {
     try {
-      const response = await fetch(`/api/datasets/${datasetId}/data`)
-      if (response.ok) {
-        const text = await response.text()
-        setRawData(text)
-        parseCSV(text)
-      }
+      const text = await getDatasetDataService(datasetId)
+      setRawData(text)
+      parseCSV(text)
     } catch (error) {
       console.error("Error loading data:", error)
     }
@@ -119,19 +114,8 @@ export default function AdvancedEditorPage() {
       const csvData = [headers, ...parsedData]
       const csvString = Papa.unparse(csvData)
       
-      const response = await fetch(`/api/datasets/${datasetId}/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data: csvString }),
-      })
-
-      if (response.ok) {
-        toast.success('Dataset saved successfully')
-      } else {
-        toast.error('Failed to save dataset')
-      }
+      await saveDatasetDataService(datasetId, csvString)
+      toast.success('Dataset saved successfully')
     } catch (error) {
       console.error('Error saving dataset:', error)
       toast.error('Failed to save dataset')
@@ -170,39 +154,27 @@ export default function AdvancedEditorPage() {
     setIsProcessing(true)
 
     try {
-      // Call Gemini API for dataset modification
-      const response = await fetch('/api/editor/modify-dataset', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          datasetId,
-          prompt: inputMessage,
-          currentData: { headers, data: parsedData }
-        }),
-      })
+      // Use AI service for dataset modification
+      const result = await modifyDatasetWithAI({
+        datasetId,
+        prompt: inputMessage,
+        currentData: { headers, data: parsedData }
+      });
+      
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: result.modification || "I've processed your request. The dataset has been updated.",
+        timestamp: new Date().toISOString()
+      }
 
-      if (response.ok) {
-        const result = await response.json()
-        
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: result.modification || "I've processed your request. The dataset has been updated.",
-          timestamp: new Date().toISOString()
-        }
-
-        setMessages(prev => [...prev, assistantMessage])
-        
-        // Update the dataset if modifications were made
-        if (result.newData) {
-          setHeaders(result.newData.headers)
-          setParsedData(result.newData.data)
-          toast.success('Dataset modified successfully')
-        }
-      } else {
-        throw new Error('Failed to process request')
+      setMessages(prev => [...prev, assistantMessage])
+      
+      // Update the dataset if modifications were made
+      if (result.newData) {
+        setHeaders(result.newData.headers)
+        setParsedData(result.newData.data)
+        toast.success('Dataset modified successfully')
       }
     } catch (error) {
       console.error('Error processing message:', error)

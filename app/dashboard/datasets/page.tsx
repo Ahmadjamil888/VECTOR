@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { UploadIcon, TrashIcon, EditIcon, EyeIcon } from "lucide-react";
 import { toast } from "sonner";
+import { listDatasetsService, createDatasetService, deleteDatasetService } from "@/lib/adk/dataset-service";
 
 interface Dataset {
   id: string;
@@ -58,11 +59,8 @@ export default function DatasetsPage() {
 
   const fetchDatasets = async () => {
     try {
-      const response = await fetch('/api/datasets');
-      if (response.ok) {
-        const data = await response.json();
-        setDatasets(data);
-      }
+      const data = await listDatasetsService();
+      setDatasets(data);
     } catch (error) {
       console.error('Error fetching datasets:', error);
       toast.error('Failed to load datasets');
@@ -78,27 +76,11 @@ export default function DatasetsPage() {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('name', newDataset.name);
-      formData.append('source_type', newDataset.source_type);
-      if (newDataset.file) {
-        formData.append('file', newDataset.file);
-      }
-
-      const response = await fetch('/api/datasets', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        toast.success('Dataset created successfully');
-        setIsCreateDialogOpen(false);
-        setNewDataset({ name: "", source_type: "file", file: null });
-        fetchDatasets();
-      } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to create dataset');
-      }
+      await createDatasetService(newDataset.name, newDataset.source_type);
+      toast.success('Dataset created successfully');
+      setIsCreateDialogOpen(false);
+      setNewDataset({ name: "", source_type: "file", file: null });
+      fetchDatasets();
     } catch (error) {
       console.error('Error creating dataset:', error);
       toast.error('Failed to create dataset');
@@ -109,16 +91,9 @@ export default function DatasetsPage() {
     if (!confirm('Are you sure you want to delete this dataset?')) return;
 
     try {
-      const response = await fetch(`/api/datasets/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        toast.success('Dataset deleted successfully');
-        fetchDatasets();
-      } else {
-        toast.error('Failed to delete dataset');
-      }
+      await deleteDatasetService(id);
+      toast.success('Dataset deleted successfully');
+      fetchDatasets();
     } catch (error) {
       console.error('Error deleting dataset:', error);
       toast.error('Failed to delete dataset');

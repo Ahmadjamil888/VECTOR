@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Papa from "papaparse";
+import { getDatasetService } from "@/lib/adk/dataset-service";
+import { getDatasetDataService, saveDatasetDataService } from "@/lib/adk/data-service";
 
 interface Dataset {
   id: string;
@@ -77,12 +79,9 @@ export default function EditorPage() {
 
   const loadData = useCallback(async (filePath: string) => {
     try {
-      const response = await fetch(`/api/datasets/${datasetId}/data`);
-      if (response.ok) {
-        const text = await response.text();
-        setRawData(text);
-        parseCSV(text);
-      }
+      const text = await getDatasetDataService(datasetId);
+      setRawData(text);
+      parseCSV(text);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -90,12 +89,9 @@ export default function EditorPage() {
 
   const fetchDataset = useCallback(async () => {
     try {
-      const response = await fetch(`/api/datasets/${datasetId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setDataset(data);
-        await loadData(data.file_path);
-      }
+      const data = await getDatasetService(datasetId);
+      setDataset(data);
+      await loadData(data.file_path);
     } catch (error) {
       console.error('Error fetching dataset:', error);
       toast.error('Failed to load dataset');
@@ -117,28 +113,17 @@ export default function EditorPage() {
       const csvData = [headers, ...parsedData];
       const csvString = Papa.unparse(csvData);
       
-      const response = await fetch(`/api/datasets/${datasetId}/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data: csvString }),
-      });
-
-      if (response.ok) {
-        toast.success('Dataset saved successfully');
-        // Add to edit history
-        const newHistoryItem: EditHistory = {
-          id: Date.now().toString(),
-          timestamp: new Date().toISOString(),
-          changes: `Saved version ${editHistory.length + 1}`,
-          snapshot: csvString
-        };
-        setEditHistory([...editHistory, newHistoryItem]);
-        setCurrentVersion(editHistory.length);
-      } else {
-        toast.error('Failed to save dataset');
-      }
+      await saveDatasetDataService(datasetId, csvString);
+      toast.success('Dataset saved successfully');
+      // Add to edit history
+      const newHistoryItem: EditHistory = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        changes: `Saved version ${editHistory.length + 1}`,
+        snapshot: csvString
+      };
+      setEditHistory([...editHistory, newHistoryItem]);
+      setCurrentVersion(editHistory.length);
     } catch (error) {
       console.error('Error saving dataset:', error);
       toast.error('Failed to save dataset');
