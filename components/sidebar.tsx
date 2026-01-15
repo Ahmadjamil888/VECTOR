@@ -14,6 +14,8 @@ import {
   PencilIcon,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { UserProfileFooter } from "@/components/user-profile-footer";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -51,6 +53,8 @@ export function Sidebar() {
           ))}
         </nav>
       </div>
+      
+      <UserProfileFooter />
     </aside>
   );
 }

@@ -153,8 +153,8 @@ const deleteDatasetTool = new FunctionTool({
       throw new Error("Dataset not found or unauthorized");
     }
 
-    // Delete file from storage if it exists
-    if (dataset.file_path) {
+    // Verify that the file path belongs to the user before deletion
+    if (dataset.file_path && dataset.file_path.startsWith(`${user.id}/`)) {
       const { error: deleteError } = await supabase.storage
         .from('datasets')
         .remove([dataset.file_path]);

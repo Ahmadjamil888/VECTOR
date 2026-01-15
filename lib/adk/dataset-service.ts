@@ -29,41 +29,61 @@ const datasetAgent = new LlmAgent({
 
 // Service functions that use the agent
 export async function createDatasetService(name: string, source_type: string, file_path?: string, file_size_mb?: number, row_count?: number) {
-  const result = await datasetAgent.run(`Create a dataset with name "${name}", source type "${source_type}". File path: ${file_path || 'null'}, size: ${file_size_mb || 0}MB, rows: ${row_count || 0}.`);
-  
-  if (result.tool_used === 'create_dataset') {
-    return result.result;
+  try {
+    const result = await datasetAgent.run(`Create a dataset with name "${name}", source type "${source_type}". File path: ${file_path || 'null'}, size: ${file_size_mb || 0}MB, rows: ${row_count || 0}.`);
+    
+    if (result.tool_used === 'create_dataset') {
+      return result.result;
+    }
+    
+    throw new Error('Failed to create dataset: tool not used properly');
+  } catch (error) {
+    console.error('Error creating dataset:', error);
+    throw new Error(`Failed to create dataset: ${(error as Error).message}`);
   }
-  
-  throw new Error('Failed to create dataset');
 }
 
 export async function listDatasetsService() {
-  const result = await datasetAgent.run('List all datasets for the current user.');
-  
-  if (result.tool_used === 'list_datasets') {
-    return result.result.datasets;
+  try {
+    const result = await datasetAgent.run('List all datasets for the current user.');
+    
+    if (result.tool_used === 'list_datasets') {
+      return result.result.datasets;
+    }
+    
+    throw new Error('Failed to list datasets: tool not used properly');
+  } catch (error) {
+    console.error('Error listing datasets:', error);
+    throw new Error(`Failed to list datasets: ${(error as Error).message}`);
   }
-  
-  throw new Error('Failed to list datasets');
 }
 
 export async function getDatasetService(datasetId: string) {
-  const result = await datasetAgent.run(`Get the dataset with ID "${datasetId}".`);
-  
-  if (result.tool_used === 'get_dataset') {
-    return result.result.dataset;
+  try {
+    const result = await datasetAgent.run(`Get the dataset with ID "${datasetId}".`);
+    
+    if (result.tool_used === 'get_dataset') {
+      return result.result.dataset;
+    }
+    
+    throw new Error('Failed to get dataset: tool not used properly');
+  } catch (error) {
+    console.error('Error getting dataset:', error);
+    throw new Error(`Failed to get dataset: ${(error as Error).message}`);
   }
-  
-  throw new Error('Failed to get dataset');
 }
 
 export async function deleteDatasetService(datasetId: string) {
-  const result = await datasetAgent.run(`Delete the dataset with ID "${datasetId}".`);
-  
-  if (result.tool_used === 'delete_dataset') {
-    return result.result;
+  try {
+    const result = await datasetAgent.run(`Delete the dataset with ID "${datasetId}".`);
+    
+    if (result.tool_used === 'delete_dataset') {
+      return result.result;
+    }
+    
+    throw new Error('Failed to delete dataset: tool not used properly');
+  } catch (error) {
+    console.error('Error deleting dataset:', error);
+    throw new Error(`Failed to delete dataset: ${(error as Error).message}`);
   }
-  
-  throw new Error('Failed to delete dataset');
 }

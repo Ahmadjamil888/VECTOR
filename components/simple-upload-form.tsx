@@ -82,9 +82,9 @@ export function SimpleUploadForm() {
 
       // Upload all files
       const uploadPromises = files.map(async (file) => {
-        // Upload file to Supabase Storage
+        // Upload file to Supabase Storage with user-specific folder
         const fileExt = file.name.split('.').pop()
-        const fileName = `${user.id}/${Date.now()}_${file.name}`
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('datasets')
