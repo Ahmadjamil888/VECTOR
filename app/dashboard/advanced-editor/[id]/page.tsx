@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -58,43 +58,6 @@ export default function AdvancedEditorPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (datasetId) {
-      fetchDataset();
-    }
-  }, [datasetId]);
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  const fetchDataset = async () => {
-    try {
-      const data = await getDatasetService(datasetId)
-      setDataset(data)
-      await loadData(data.file_path)
-    } catch (error) {
-      console.error("Error fetching dataset:", error)
-      toast.error("Failed to load dataset")
-      router.push("/dashboard/datasets")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadData = async (filePath: string) => {
-    try {
-      const text = await getDatasetDataService(datasetId)
-      setRawData(text)
-      parseCSV(text)
-    } catch (error) {
-      console.error("Error loading data:", error)
-    }
-  }
 
   const parseCSV = (csvText: string) => {
     Papa.parse(csvText, {
@@ -106,6 +69,44 @@ export default function AdvancedEditorPage() {
       },
       skipEmptyLines: true
     })
+  }
+
+  const loadData = useCallback(async (filePath: string) => {
+    try {
+      const text = await getDatasetDataService(datasetId)
+      setRawData(text)
+      parseCSV(text)
+    } catch (error) {
+      console.error("Error loading data:", error)
+    }
+  }, [datasetId, parseCSV])
+
+  const fetchDataset = useCallback(async () => {
+    try {
+      const data = await getDatasetService(datasetId)
+      setDataset(data)
+      await loadData(data.file_path)
+    } catch (error) {
+      console.error("Error fetching dataset:", error)
+      toast.error("Failed to load dataset")
+      router.push("/dashboard/datasets")
+    } finally {
+      setLoading(false)
+    }
+  }, [datasetId, loadData])
+
+  useEffect(() => {
+    if (datasetId) {
+      fetchDataset();
+    }
+  }, [datasetId, fetchDataset]);
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
   const handleSave = async () => {

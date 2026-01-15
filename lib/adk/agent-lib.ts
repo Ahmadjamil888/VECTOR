@@ -208,14 +208,17 @@ const getDatasetTool = new FunctionTool({
   }
 });
 
-// Export all tools
+// Export all tools and types
 export {
-  BaseTool,
-  FunctionTool,
   createDatasetTool,
   listDatasetsTool,
   deleteDatasetTool,
   getDatasetTool
+};
+
+export type {
+  BaseTool,
+  FunctionTool
 };
 
 // Define the agent class similar to ADK
