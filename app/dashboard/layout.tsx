@@ -1,5 +1,5 @@
 import { Sidebar } from "@/components/sidebar";
-import { auth } from "@clerk/nextjs";
+import { getAuth } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
@@ -7,13 +7,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
+  const { userId } = await getAuth();
 
   if (!userId) {
     redirect("/sign-in");
   }
 
-  // Get user details using userId if needed
+  // Mock user object for compatibility
   const user = userId ? { id: userId } : null;
 
   return (
