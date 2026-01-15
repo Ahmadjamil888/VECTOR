@@ -1,21 +1,10 @@
 import { Sidebar } from "@/components/sidebar";
-import { auth } from "@clerk/nextjs";
-import { redirect } from "next/navigation";
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    redirect("/sign-in");
-  }
-
-  // Mock user object for compatibility
-  const user = userId ? { id: userId } : null;
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex">
