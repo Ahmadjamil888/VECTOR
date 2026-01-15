@@ -69,7 +69,10 @@
     "zod": "^3.23.8",
     "zod-to-json-schema": "^3.23.2",
     "@clerk/nextjs": "^5.7.0",
-    "@clerk/types": "^4.29.0"
+    "@clerk/types": "^4.29.0",
+    "@clerk/clerk-sdk-node": "^2.22.0",
+    "@clerk/shared": "^2.9.0",
+    "@clerk/backend": "^1.22.0"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^13.4.19",

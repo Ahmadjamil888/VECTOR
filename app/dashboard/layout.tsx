@@ -1,5 +1,5 @@
 import { Sidebar } from "@/components/sidebar";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
@@ -7,11 +7,14 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await currentUser();
+  const { userId } = await auth();
 
-  if (!user) {
+  if (!userId) {
     redirect("/sign-in");
   }
+
+  // Get user details using userId if needed
+  const user = userId ? { id: userId } : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">

@@ -59,7 +59,7 @@ export default function AdvancedEditorPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
 
-  const parseCSV = (csvText: string) => {
+  const parseCSV = useCallback((csvText: string) => {
     Papa.parse(csvText, {
       complete: (results: any) => {
         if (results.data.length > 0) {
@@ -69,7 +69,7 @@ export default function AdvancedEditorPage() {
       },
       skipEmptyLines: true
     })
-  }
+  }, [setHeaders, setParsedData])
 
   const loadData = useCallback(async (filePath: string) => {
     try {
@@ -93,7 +93,7 @@ export default function AdvancedEditorPage() {
     } finally {
       setLoading(false)
     }
-  }, [datasetId, loadData])
+  }, [datasetId, loadData, router])
 
   useEffect(() => {
     if (datasetId) {
