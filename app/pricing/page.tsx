@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,8 +13,39 @@ import {
 import { CheckIcon, SparklesIcon } from 'lucide-react';
 
 export default function PricingPage() {
-  // Simulated user state for demo purposes
-  const [user] = useState<any>(null); // In a real app, this would come from Clerk
+  // In a real app, this would come from your authentication context
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // In a real implementation, you would get the current user from your auth system
+    // and fetch their profile from your database
+    const fetchUserData = async () => {
+      try {
+        // Mock user data - in reality, you'd get this from your auth system
+        const mockUser = { id: 'mock-user-id', email: 'user@example.com' };
+        setCurrentUser(mockUser);
+        
+        // Fetch user profile from your database
+        // const response = await fetch('/api/user/profile');
+        // const profile = await response.json();
+        // setUserProfile(profile);
+        
+        // For demo, simulate profile data
+        setUserProfile({
+          subscription_tier: 'free' // This would come from your database
+        });
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserData();
+  }, []);
+  
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   
   const plans = [
@@ -32,7 +63,8 @@ export default function PricingPage() {
       ],
       popular: false,
       buttonVariant: 'outline' as const,
-      currentPlan: true,
+      currentPlan: userProfile?.subscription_tier === 'free',
+      priceId: 'price_free_default',
     },
     {
       id: 'pro',
@@ -49,7 +81,8 @@ export default function PricingPage() {
       ],
       popular: true,
       buttonVariant: 'default' as const,
-      currentPlan: false,
+      currentPlan: userProfile?.subscription_tier === 'pro',
+      priceId: 'price_pro_monthly',
     },
     {
       id: 'enterprise',
@@ -66,26 +99,41 @@ export default function PricingPage() {
       ],
       popular: false,
       buttonVariant: 'outline' as const,
-      currentPlan: false,
+      currentPlan: userProfile?.subscription_tier === 'enterprise',
+      priceId: 'price_enterprise_monthly',
     },
   ];
 
-  const handleSubscribe = (planId: string) => {
-    // In a real implementation, this would check if user is signed in
-    // and redirect to Clerk's billing flow
-    
-    setSelectedPlan(planId);
-    
-    // In a real implementation, this would redirect to Clerk's billing flow
-    // For now, we'll just show a message
-    if (!user) {
-      // Redirect to sign in if not logged in
+  const handleSubscribe = async (planId: string, priceId: string) => {
+    if (!currentUser) {
       alert('Please sign in to subscribe to a plan');
       window.location.href = '/sign-in';
       return;
     }
     
-    alert(`Redirecting to payment for ${planId} plan`);
+    try {
+      // This would call your Stripe checkout API
+      const response = await fetch(`/api/stripe/checkout?user_id=${currentUser.id}&price_id=${priceId}&return_url=${encodeURIComponent(window.location.origin + '/dashboard/subscription')}`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.error}`);
+        return;
+      }
+      
+      const data = await response.json();
+      
+      // In a real implementation, redirect to Stripe checkout
+      // window.location.href = data.checkoutUrl;
+      
+      // For demo purposes, just show a message
+      alert(`Would redirect to payment for ${planId} plan`);
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Error creating checkout session');
+    }
   };
 
   return (
@@ -98,57 +146,63 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-3">
-          {plans.map((plan) => (
-            <Card 
-              key={plan.id} 
-              className={`flex flex-col ${plan.popular ? 'ring-2 ring-primary relative' : ''}`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                  <SparklesIcon className="h-4 w-4" />
-                  Most Popular
-                </div>
-              )}
-              
-              <CardHeader>
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground">{plan.period}</span>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="flex-1">
-                <ul className="space-y-3">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant={plan.buttonVariant}
-                  onClick={() => handleSubscribe(plan.id)}
-                  disabled={plan.currentPlan}
-                >
-                  {plan.currentPlan 
-                    ? 'Current Plan' 
-                    : plan.id === 'enterprise' 
-                      ? 'Contact Sales' 
-                      : 'Subscribe'
-                  }
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid gap-8 md:grid-cols-3">
+            {plans.map((plan) => (
+              <Card 
+                key={plan.id} 
+                className={`flex flex-col ${plan.popular ? 'ring-2 ring-primary relative' : ''}`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                    <SparklesIcon className="h-4 w-4" />
+                    Most Popular
+                  </div>
+                )}
+                
+                <CardHeader>
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <CardDescription>{plan.description}</CardDescription>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">{plan.price}</span>
+                    <span className="text-muted-foreground">{plan.period}</span>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="flex-1">
+                  <ul className="space-y-3">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+                
+                <CardFooter>
+                  <Button 
+                    className="w-full" 
+                    variant={plan.buttonVariant}
+                    onClick={() => handleSubscribe(plan.id, plan.priceId)}
+                    disabled={plan.currentPlan}
+                  >
+                    {plan.currentPlan 
+                      ? 'Current Plan' 
+                      : plan.id === 'enterprise' 
+                        ? 'Contact Sales' 
+                        : 'Subscribe'
+                    }
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
         
         <div className="mt-12 text-center text-sm text-muted-foreground max-w-3xl mx-auto">
           <p className="mb-2">

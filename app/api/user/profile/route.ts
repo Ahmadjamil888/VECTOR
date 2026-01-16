@@ -1,112 +1,51 @@
-import { NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { NextRequest } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-/* ---------------------------------------------
-   Helper (ASYNC — required in Next 14+)
----------------------------------------------- */
-async function createSupabase() {
-  const cookieStore = await cookies() // ✅ REQUIRED
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
-}
-
-/* ---------------------------------------------
-   GET — NEVER 401 (prevents redirect loop)
----------------------------------------------- */
-export async function GET() {
+// API route for fetching user profile
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabase()
+    // Extract user ID from query parameters
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('id');
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json(null)
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'User ID is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
+    // Connect to Supabase
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY! // Requires service role key for admin operations
+    );
+
+    // Fetch user profile from Supabase
     const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single()
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
     if (error) {
-      console.error("Profile fetch error:", error)
-      return NextResponse.json(null)
+      console.error('Error fetching user profile:', error);
+      return new Response(JSON.stringify({ error: 'Failed to fetch user profile' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    return NextResponse.json(profile)
-  } catch (err) {
-    console.error("GET /api/user/profile:", err)
-    return NextResponse.json(null)
-  }
-}
-
-/* ---------------------------------------------
-   PUT — AUTH REQUIRED
----------------------------------------------- */
-export async function PUT(req: NextRequest) {
-  try {
-    const supabase = await createSupabase()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const body = await req.json()
-
-    const update: Record<string, any> = {}
-    if (body.full_name !== undefined) update.full_name = body.full_name
-    if (body.storage_used_mb !== undefined)
-      update.storage_used_mb = body.storage_used_mb
-
-    if (Object.keys(update).length === 0) {
-      return NextResponse.json(
-        { error: "Nothing to update" },
-        { status: 400 }
-      )
-    }
-
-    const { error } = await supabase
-      .from("profiles")
-      .update(update)
-      .eq("id", user.id)
-
-    if (error) {
-      console.error("Profile update error:", error)
-      return NextResponse.json(
-        { error: "Failed to update profile" },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (err) {
-    console.error("PUT /api/user/profile:", err)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    // Return the user profile
+    return new Response(JSON.stringify(profile), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error in user profile API route:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }

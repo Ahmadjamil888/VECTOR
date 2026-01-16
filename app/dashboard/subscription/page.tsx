@@ -29,9 +29,6 @@ export default function SubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
   
-  // For Clerk Billing integration, we would typically use the useUser hook
-  // const { user } = useUser(); // Uncomment when Clerk is properly installed
-
   useEffect(() => {
     fetchUserProfile();
   }, []);
