@@ -88,7 +88,7 @@ export default function DatasetsPage() {
         name: newDataset.name,
         source_type: newDataset.source_type,
         user_id: user.id,
-        file: newDataset.file || undefined
+        ...(newDataset.source_type === 'file' && newDataset.file ? { file: newDataset.file } : {})
       });
 
       toast.success('Dataset created successfully');

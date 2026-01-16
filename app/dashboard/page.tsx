@@ -79,7 +79,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="min-h-[calc(100vh-120px)] space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Dashboard Overview</h1>
         <p className="text-muted-foreground mt-2">Your data science workspace statistics</p>
