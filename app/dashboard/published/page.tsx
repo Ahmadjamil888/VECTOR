@@ -21,6 +21,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { EyeIcon, DownloadIcon, ShareIcon } from "lucide-react";
 import { toast } from "sonner";
+import { getDatasetsByUserId } from "@/lib/db/services";
+import { createClient } from "@/lib/supabase/client";
 
 interface PublishedDataset {
   id: string;
@@ -39,6 +41,7 @@ interface PublishedDataset {
 export default function PublishedPage() {
   const [publishedDatasets, setPublishedDatasets] = useState<PublishedDataset[]>([]);
   const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
     fetchPublishedDatasets();
@@ -46,11 +49,33 @@ export default function PublishedPage() {
 
   const fetchPublishedDatasets = async () => {
     try {
-      const response = await fetch('/api/published');
-      if (response.ok) {
-        const data = await response.json();
-        setPublishedDatasets(data);
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
       }
+
+      const allDatasets = await getDatasetsByUserId(user.id);
+      
+      // Filter only published datasets
+      const publishedData = allDatasets.filter(ds => ds.is_published);
+      
+      // Transform the data to match the PublishedDataset interface
+      const transformedData = publishedData.map(ds => ({
+        id: ds.id,
+        name: ds.name,
+        publish_name: ds.name, // Using the dataset name as publish name
+        publish_description: ds.description || `Dataset: ${ds.name}`, // Using description field if available
+        publish_tags: ds.tags || [], // Assuming tags field exists
+        row_count: ds.row_count || 0,
+        file_size_mb: ds.file_size_mb || 0,
+        created_at: ds.created_at,
+        view_count: ds.view_count || 0,
+        download_count: ds.download_count || 0,
+        thumbnail_url: ds.thumbnail_url || '',
+      }));
+
+      setPublishedDatasets(transformedData as PublishedDataset[]);
     } catch (error) {
       console.error('Error fetching published datasets:', error);
       toast.error('Failed to load published datasets');

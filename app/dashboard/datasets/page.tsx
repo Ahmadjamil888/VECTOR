@@ -30,7 +30,8 @@ import {
 } from "@/components/ui/table";
 import { UploadIcon, TrashIcon, EditIcon, EyeIcon } from "lucide-react";
 import { toast } from "sonner";
-import { listDatasetsService, createDatasetService, deleteDatasetService } from "@/lib/adk/dataset-service";
+import { getDatasetsByUserId, createDataset, deleteDataset } from "@/lib/db/services";
+import { createClient } from "@/lib/supabase/client";
 
 interface Dataset {
   id: string;
@@ -41,6 +42,7 @@ interface Dataset {
   file_size_mb: number;
   created_at: string;
   is_published: boolean;
+  user_id: string;
 }
 
 export default function DatasetsPage() {
@@ -52,6 +54,7 @@ export default function DatasetsPage() {
     source_type: "file",
     file: null as File | null
   });
+  const supabase = createClient();
 
   useEffect(() => {
     fetchDatasets();
@@ -59,8 +62,14 @@ export default function DatasetsPage() {
 
   const fetchDatasets = async () => {
     try {
-      const data = await listDatasetsService();
-      setDatasets(data);
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      const data = await getDatasetsByUserId(user.id);
+      setDatasets(data as Dataset[]);
     } catch (error) {
       console.error('Error fetching datasets:', error);
       toast.error('Failed to load datasets');
@@ -76,7 +85,22 @@ export default function DatasetsPage() {
     }
 
     try {
-      await createDatasetService(newDataset.name, newDataset.source_type);
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      await createDataset({
+        name: newDataset.name,
+        source_type: newDataset.source_type,
+        user_id: user.id,
+        row_count: 0,
+        file_size_mb: 0,
+        is_published: false,
+        file_path: null
+      });
+
       toast.success('Dataset created successfully');
       setIsCreateDialogOpen(false);
       setNewDataset({ name: "", source_type: "file", file: null });
@@ -91,7 +115,7 @@ export default function DatasetsPage() {
     if (!confirm('Are you sure you want to delete this dataset?')) return;
 
     try {
-      await deleteDatasetService(id);
+      await deleteDataset(id);
       toast.success('Dataset deleted successfully');
       fetchDatasets();
     } catch (error) {

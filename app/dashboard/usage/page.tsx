@@ -20,6 +20,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { BarChartIcon, DatabaseIcon, ZapIcon, TrendingUpIcon } from "lucide-react";
 import { toast } from "sonner";
+import { getUserUsageStats } from "@/lib/db/services";
+import { createClient } from "@/lib/supabase/client";
 
 interface UsageStats {
   total_datasets: number;
@@ -42,6 +44,7 @@ interface ActivityItem {
 export default function UsagePage() {
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
     fetchUsageStats();
@@ -49,11 +52,15 @@ export default function UsagePage() {
 
   const fetchUsageStats = async () => {
     try {
-      const response = await fetch('/api/usage');
-      if (response.ok) {
-        const data = await response.json();
-        setUsageStats(data);
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
       }
+
+      const usageStats = await getUserUsageStats(user.id);
+      setUsageStats(usageStats);
+
     } catch (error) {
       console.error('Error fetching usage stats:', error);
       toast.error('Failed to load usage statistics');

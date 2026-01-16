@@ -12,16 +12,25 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { CheckIcon, CreditCardIcon } from "lucide-react";
 import { toast } from "sonner";
+import { getUserProfile } from "@/lib/db/services";
+import { createClient } from "@/lib/supabase/client";
 
 interface UserProfile {
   subscription_tier: string;
   credits_remaining: number;
   storage_used_mb: number;
+  id: string;
+  full_name: string;
+  email: string;
 }
 
 export default function SubscriptionPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+  
+  // For Clerk Billing integration, we would typically use the useUser hook
+  // const { user } = useUser(); // Uncomment when Clerk is properly installed
 
   useEffect(() => {
     fetchUserProfile();
@@ -29,11 +38,14 @@ export default function SubscriptionPage() {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await fetch('/api/user/profile');
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data);
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
       }
+
+      const data = await getUserProfile(user.id);
+      setProfile(data as UserProfile);
     } catch (error) {
       console.error('Error fetching user profile:', error);
       toast.error('Failed to load profile information');
@@ -43,8 +55,21 @@ export default function SubscriptionPage() {
   };
 
   const handleUpgradePlan = (plan: string) => {
-    // In a real implementation, this would integrate with a payment processor
-    toast.info(`Upgrade to ${plan} plan - Payment integration needed`);
+    // In a real implementation with Clerk Billing, this would redirect to Clerk's payment flow
+    // For example: redirectToBilling({ planId: plan });
+    
+    // For now, we'll show a message indicating the integration
+    toast.info(`Redirecting to Clerk Billing for ${plan} plan upgrade`);
+    
+    // Example of how this would work with Clerk Billing:
+    // if (typeof window !== 'undefined') {
+    //   window.location.href = `/api/billing/upgrade?plan=${plan}`;
+    // }
+    
+    // In a complete Clerk Billing integration:
+    // 1. Call Clerk's billing API to initiate checkout
+    // 2. Upon successful payment, Clerk would send webhook to update user's subscription
+    // 3. The webhook would update the user's tier in the Supabase profiles table
   };
 
   const plans = [
@@ -61,7 +86,8 @@ export default function SubscriptionPage() {
       ],
       buttonText: "Current Plan",
       buttonVariant: "outline" as const,
-      popular: false
+      popular: false,
+      clerkPlanId: "free" // Clerk Billing plan ID would go here
     },
     {
       name: "Pro",
@@ -77,7 +103,8 @@ export default function SubscriptionPage() {
       ],
       buttonText: "Upgrade to Pro",
       buttonVariant: "default" as const,
-      popular: true
+      popular: true,
+      clerkPlanId: "pro" // Clerk Billing plan ID would go here
     },
     {
       name: "Enterprise",
@@ -93,7 +120,8 @@ export default function SubscriptionPage() {
       ],
       buttonText: "Contact Sales",
       buttonVariant: "outline" as const,
-      popular: false
+      popular: false,
+      clerkPlanId: "enterprise" // Clerk Billing plan ID would go here
     }
   ];
 

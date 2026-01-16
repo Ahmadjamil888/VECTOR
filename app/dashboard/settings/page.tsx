@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { SaveIcon, UserIcon, BellIcon, ShieldIcon } from "lucide-react";
+import { getUserProfile, updateUserProfile } from "@/lib/db/services";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
@@ -29,6 +31,7 @@ export default function SettingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const supabase = createClient();
 
   useEffect(() => {
     fetchSettings();
@@ -36,12 +39,18 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      // In a real implementation, this would fetch from your API
-      // For now, we'll use mock data
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      const data = await getUserProfile(user.id);
+
       setSettings({
-        fullName: "John Doe",
-        email: "john@example.com",
-        bio: "Data scientist passionate about AI and machine learning",
+        fullName: data.full_name || "",
+        email: data.email || "",
+        bio: data.bio || "",
         notifications: {
           email: true,
           newsletter: false,
@@ -59,8 +68,17 @@ export default function SettingsPage() {
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
-      // In a real implementation, this would save to your API
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      await updateUserProfile(user.id, {
+        full_name: settings.fullName,
+        bio: settings.bio,
+      });
+
       toast.success('Settings saved successfully');
     } catch (error) {
       console.error('Error saving settings:', error);
