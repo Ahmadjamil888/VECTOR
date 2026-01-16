@@ -6,6 +6,7 @@ import { SimpleUploadForm } from "@/components/simple-upload-form";
 import { toast } from "sonner";
 import { getDashboardStats } from "@/lib/db/services";
 import { createClient } from "@/lib/supabase/client";
+// import { auth } from "@clerk/nextjs/server"; // Commented out due to module issues
 
 interface DashboardStats {
   totalDatasets: number;
@@ -28,7 +29,16 @@ export default function DashboardPage() {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
-        throw new Error('User not authenticated');
+        console.error('Authentication error:', userError);
+        toast.error('User not authenticated');
+        // Set default stats instead of throwing
+        setStats({
+          totalDatasets: 0,
+          storageUsed: 0,
+          totalPublished: 0,
+          recentActivity: []
+        });
+        return;
       }
 
       const dashboardStats = await getDashboardStats(user.id);
@@ -36,7 +46,14 @@ export default function DashboardPage() {
       setStats(dashboardStats);
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
-      toast.error('Failed to load dashboard statistics');
+      // Set default stats instead of showing error to prevent dashboard crashes
+      setStats({
+        totalDatasets: 0,
+        storageUsed: 0,
+        totalPublished: 0,
+        recentActivity: []
+      });
+      toast.error('Failed to load dashboard statistics. Showing default values.');
     } finally {
       setLoading(false);
     }
@@ -130,13 +147,14 @@ export default function DashboardPage() {
             stats.recentActivity.map((activity: any) => (
               <div key={activity.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <div>
-                  <p className="font-medium">{activity.name}</p>
+                  <p className="font-medium">{activity.name || activity.title || 'Untitled'}</p>
                   <p className="text-sm text-muted-foreground">
-                    {new Date(activity.created_at).toLocaleString()}
+                    {activity.created_at ? new Date(activity.created_at).toLocaleString() : 'Date unknown'}
                   </p>
                 </div>
                 <span className="text-sm text-muted-foreground">
-                  {activity.file_size_mb ? `${activity.file_size_mb.toFixed(2)} MB` : 'N/A'}
+                  {activity.file_size_mb ? `${Number(activity.file_size_mb).toFixed(2)} MB` : 
+                   activity.file_size ? `${Number(activity.file_size).toFixed(2)} MB` : 'N/A'}
                 </span>
               </div>
             ))
