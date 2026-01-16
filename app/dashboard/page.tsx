@@ -2,23 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { FileTextIcon, TrendingUpIcon, ShareIcon } from "lucide-react";
-import { SimpleUploadForm } from "@/components/simple-upload-form";
+import { FileUpload } from "@/components/file-upload";
 import { toast } from "sonner";
-import { getDashboardStats } from "@/lib/db/services";
-import { createClient } from "@/lib/supabase/client";
+import { DatasetService } from "@/lib/dataset-service";
+import { supabase } from "@/lib/supabase";
 // import { auth } from "@clerk/nextjs/server"; // Commented out due to module issues
 
 interface DashboardStats {
   totalDatasets: number;
-  storageUsed: number;
-  totalPublished: number;
-  recentActivity: any[];
+  totalStorage: number;
+  recentDatasets: number;
+  storageLimit: number;
+  storagePercentage: number;
 }
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardStats();
@@ -34,24 +35,34 @@ export default function DashboardPage() {
         // Set default stats instead of throwing
         setStats({
           totalDatasets: 0,
-          storageUsed: 0,
-          totalPublished: 0,
-          recentActivity: []
+          totalStorage: 0,
+          recentDatasets: 0,
+          storageLimit: 100,
+          storagePercentage: 0
         });
         return;
       }
 
-      const dashboardStats = await getDashboardStats(user.id);
+      setUserId(user.id);
       
-      setStats(dashboardStats);
+      const userStats = await DatasetService.getUserDatasetStats(user.id);
+      
+      setStats({
+        totalDatasets: userStats.totalDatasets,
+        totalStorage: userStats.totalStorage,
+        recentDatasets: userStats.recentDatasets,
+        storageLimit: userStats.storageLimit,
+        storagePercentage: userStats.storagePercentage
+      });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       // Set default stats instead of showing error to prevent dashboard crashes
       setStats({
         totalDatasets: 0,
-        storageUsed: 0,
-        totalPublished: 0,
-        recentActivity: []
+        totalStorage: 0,
+        recentDatasets: 0,
+        storageLimit: 100,
+        storagePercentage: 0
       });
       toast.error('Failed to load dashboard statistics. Showing default values.');
     } finally {
@@ -95,12 +106,12 @@ export default function DashboardPage() {
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Storage Used</div>
-              <div className="text-2xl font-bold">{(stats?.storageUsed || 0).toFixed(2)}MB</div>
-              <p className="text-xs text-muted-foreground mt-1">of 100MB allocated</p>
+              <div className="text-2xl font-bold">{(stats?.totalStorage || 0).toFixed(2)}MB</div>
+              <p className="text-xs text-muted-foreground mt-1">of {stats?.storageLimit || 100}MB allocated</p>
               <div className="mt-2 h-2 w-full rounded bg-muted">
                 <div 
                   className="h-2 bg-primary rounded" 
-                  style={{ width: `${Math.min(((stats?.storageUsed || 0) / 100) * 100, 100)}%` }} 
+                  style={{ width: `${stats?.storagePercentage || 0}%` }} 
                 />
               </div>
             </div>
@@ -112,9 +123,9 @@ export default function DashboardPage() {
               <ShareIcon className="h-5 w-5 text-purple-500" />
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Published</div>
-              <div className="text-2xl font-bold">{stats?.totalPublished || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Public datasets</p>
+              <div className="text-sm text-muted-foreground">Recent Datasets</div>
+              <div className="text-2xl font-bold">{stats?.recentDatasets || 0}</div>
+              <p className="text-xs text-muted-foreground mt-1">Last 30 days</p>
             </div>
           </div>
         </div>
@@ -137,32 +148,34 @@ export default function DashboardPage() {
       </div>
 
       {/* Upload Form */}
-      <SimpleUploadForm />
+      {userId && (
+        <FileUpload 
+          userId={userId} 
+          onUploadComplete={(datasetId) => {
+            // Refresh stats after upload
+            fetchDashboardStats();
+            toast.success('Dataset uploaded successfully!');
+          }}
+        />
+      )}
 
       {/* Recent Activity */}
       <div className="rounded-xl border bg-card p-6">
-        <h3 className="font-semibold mb-4">Recent Activity</h3>
-        <div className="space-y-3">
-          {stats?.recentActivity && stats.recentActivity.length > 0 ? (
-            stats.recentActivity.map((activity: any) => (
-              <div key={activity.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                <div>
-                  <p className="font-medium">{activity.name || activity.title || 'Untitled'}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {activity.created_at ? new Date(activity.created_at).toLocaleString() : 'Date unknown'}
-                  </p>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {activity.file_size_mb ? `${Number(activity.file_size_mb).toFixed(2)} MB` : 
-                   activity.file_size ? `${Number(activity.file_size).toFixed(2)} MB` : 'N/A'}
-                </span>
-              </div>
-            ))
-          ) : (
-            <div className="text-sm text-muted-foreground text-center py-8">
-              No recent activity
+        <h3 className="font-semibold mb-4">Storage Information</h3>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">Total Datasets</p>
+              <p className="text-2xl font-bold">{stats?.totalDatasets || 0}</p>
             </div>
-          )}
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">Storage Used</p>
+              <p className="text-2xl font-bold">{(stats?.totalStorage || 0).toFixed(2)}MB</p>
+            </div>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            <p>You have used {(stats?.storagePercentage || 0).toFixed(1)}% of your {stats?.storageLimit || 100}MB storage limit.</p>
+          </div>
         </div>
       </div>
     </div>

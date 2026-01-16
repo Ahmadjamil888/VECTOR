@@ -30,31 +30,21 @@ import {
 } from "@/components/ui/table";
 import { UploadIcon, TrashIcon, EditIcon, EyeIcon } from "lucide-react";
 import { toast } from "sonner";
-import { getDatasetsByUserId, createDataset, deleteDataset } from "@/lib/db/services";
-import { createClient } from "@/lib/supabase/client";
+import { DatasetService } from "@/lib/dataset-service";
+import { supabase } from "@/lib/supabase";
 
-interface Dataset {
-  id: string;
-  name: string;
-  file_path: string;
-  source_type: string;
-  row_count: number;
-  file_size_mb: number;
-  created_at: string;
-  is_published: boolean;
-  user_id: string;
-}
+type Dataset = import("@/lib/dataset-service").Dataset;
 
 export default function DatasetsPage() {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newDataset, setNewDataset] = useState({
     name: "",
-    source_type: "file",
+    source_type: "file" as const,
     file: null as File | null
   });
-  const supabase = createClient();
 
   useEffect(() => {
     fetchDatasets();
@@ -65,11 +55,13 @@ export default function DatasetsPage() {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
-        throw new Error('User not authenticated');
+        toast.error('User not authenticated');
+        return;
       }
 
-      const data = await getDatasetsByUserId(user.id);
-      setDatasets(data as Dataset[]);
+      setUserId(user.id);
+      const data = await DatasetService.getDatasets(user.id);
+      setDatasets(data);
     } catch (error) {
       console.error('Error fetching datasets:', error);
       toast.error('Failed to load datasets');
@@ -88,17 +80,15 @@ export default function DatasetsPage() {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
-        throw new Error('User not authenticated');
+        toast.error('User not authenticated');
+        return;
       }
 
-      await createDataset({
+      await DatasetService.createDataset({
         name: newDataset.name,
         source_type: newDataset.source_type,
         user_id: user.id,
-        row_count: 0,
-        file_size_mb: 0,
-        is_published: false,
-        file_path: null
+        file: newDataset.file || undefined
       });
 
       toast.success('Dataset created successfully');
@@ -115,7 +105,14 @@ export default function DatasetsPage() {
     if (!confirm('Are you sure you want to delete this dataset?')) return;
 
     try {
-      await deleteDataset(id);
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        toast.error('User not authenticated');
+        return;
+      }
+
+      await DatasetService.deleteDataset(id, user.id);
       toast.success('Dataset deleted successfully');
       fetchDatasets();
     } catch (error) {
@@ -171,7 +168,7 @@ export default function DatasetsPage() {
                   id="source"
                   className="w-full p-2 border rounded"
                   value={newDataset.source_type}
-                  onChange={(e) => setNewDataset({...newDataset, source_type: e.target.value})}
+                  onChange={(e) => setNewDataset({...newDataset, source_type: e.target.value as any})}
                 >
                   <option value="file">Local File</option>
                   <option value="kaggle">Kaggle</option>
@@ -247,11 +244,11 @@ export default function DatasetsPage() {
                     </TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        dataset.is_published 
+                        dataset.file_path 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {dataset.is_published ? 'Published' : 'Private'}
+                        {dataset.file_path ? 'Uploaded' : 'Pending'}
                       </span>
                     </TableCell>
                     <TableCell>
